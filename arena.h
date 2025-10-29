@@ -1,3 +1,5 @@
+#ifndef ARENA_H
+#define ARENA_H
 #include <stdint.h>
 
 typedef struct {
@@ -15,3 +17,4 @@ typedef struct {
 void *ArenaAlloc(Arena *a, int32_t bytes);
 void *ArenaRealloc(Arena *a, void *orig, int32_t bytes);
 void ArenaFree(Arena *a);
+#endif // !ARENA_H
