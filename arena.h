@@ -18,3 +18,12 @@ void *ArenaAlloc(Arena *a, int32_t bytes);
 void *ArenaRealloc(Arena *a, void *orig, int32_t bytes);
 void ArenaFree(Arena *a);
 #endif // !ARENA_H
+
+#ifdef ARENA_IMPLEMENTATION
+#ifndef IMPLEMENTATION_GUARD
+#define IMPLEMENTATION_GUARD
+
+#include "arena/arena.c"
+
+#endif // !IMPLEMENTATION_GUARD
+#endif // ARENA_IMPLEMENTATION
