@@ -11,11 +11,15 @@
 #define assertEqualsUint(actual, expected)
 #define assertEqualsFloat(actual, expected)
 #define assertEqualsDouble(actual, expected)
+#define assertEqualsPtr(actual, expected)
+#define assertEqualsChar(actual, expected)
 
 #define assertNotEqualsInt(actual, expected)
 #define assertNotEqualsUint(actual, expected)
 #define assertNotEqualsFloat(actual, expected)
 #define assertNotEqualsDouble(actual, expected)
+#define assertNotEqualsPtr(actual, expected)
+#define assertNotEqualsChar(actual, expected)
 
 #endif // !TEST_IMPLEMENTATION
 

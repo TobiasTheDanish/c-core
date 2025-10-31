@@ -1,6 +1,8 @@
 #ifndef CORE_GUI_H
 #define CORE_GUI_H
 
+#include "string.h"
+#include <stdint.h>
 typedef struct {
   float x;
   float y;
@@ -28,6 +30,26 @@ typedef struct {
   float strictness;
 } UiSize;
 
+typedef enum {
+  UiWidgetDataKind_None = 0,
+  UiWidgetDataKind_Text,
+  UiWidgetDataKind_Container,
+} UiWidgetDataKind;
+
+typedef struct {
+  UiWidgetDataKind kind;
+  union {
+    struct {
+    } none;
+    struct {
+      String value;
+    } text;
+    struct {
+      UiAxis layoutAxis;
+    } container;
+  };
+} UiWidgetData;
+
 typedef struct UI_WIDGET {
   struct UI_WIDGET *parent;
   struct UI_WIDGET *left;      // siblings
@@ -39,6 +61,8 @@ typedef struct UI_WIDGET {
   float relativePosition[UiAxis_COUNT];
   float dimensions[UiAxis_COUNT];
   Rect screenRect;
+
+  UiWidgetData data;
 } UiWidget;
 
 typedef struct {

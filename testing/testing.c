@@ -43,29 +43,49 @@ void _assertEqualsDouble(double actual, double expected, char *file, int line) {
   snprintf(__buf, 75, "Actual: %f. Expected: %f\n", actual, expected);
   _assert(actual == expected, __buf, file, line);
 }
+void _assertEqualsPtr(void *actual, void *expected, char *file, int line) {
+  char __buf[75] = {0};
+  snprintf(__buf, 75, "Actual: %p. Expected: %p\n", actual, expected);
+  _assert(actual == expected, __buf, file, line);
+}
+void _assertEqualsChar(char actual, char expected, char *file, int line) {
+  char __buf[90] = {0};
+  snprintf(__buf, 90, "Actual: %c. Expected: %c\n", actual, expected);
+  _assert(actual == expected, __buf, file, line);
+}
 
 void _assertNotEqualsInt(int64_t actual, int64_t expected, char *file,
                          int line) {
   char __buf[75] = {0};
   snprintf(__buf, 75, "Actual: %ld. Expected: %ld\n", actual, expected);
-  _assert(actual == expected, __buf, file, line);
+  _assert(actual != expected, __buf, file, line);
 }
 void _assertNotEqualsUint(uint64_t actual, uint64_t expected, char *file,
                           int line) {
   char __buf[75] = {0};
   snprintf(__buf, 75, "Actual: %ld. Expected: %ld\n", actual, expected);
-  _assert(actual == expected, __buf, file, line);
+  _assert(actual != expected, __buf, file, line);
 }
 void _assertNotEqualsFloat(float actual, float expected, char *file, int line) {
   char __buf[75] = {0};
   snprintf(__buf, 75, "Actual: %f. Expected: %f\n", actual, expected);
-  _assert(actual == expected, __buf, file, line);
+  _assert(actual != expected, __buf, file, line);
 }
 void _assertNotEqualsDouble(double actual, double expected, char *file,
                             int line) {
   char __buf[75] = {0};
   snprintf(__buf, 75, "Actual: %f. Expected: %f\n", actual, expected);
-  _assert(actual == expected, __buf, file, line);
+  _assert(actual != expected, __buf, file, line);
+}
+void _assertNotEqualsPtr(void *actual, void *expected, char *file, int line) {
+  char __buf[75] = {0};
+  snprintf(__buf, 75, "Actual: %p. Expected: %p\n", actual, expected);
+  _assert(actual != expected, __buf, file, line);
+}
+void _assertNotEqualsChar(char actual, char expected, char *file, int line) {
+  char __buf[75] = {0};
+  snprintf(__buf, 75, "Actual: %c. Expected: %c\n", actual, expected);
+  _assert(actual != expected, __buf, file, line);
 }
 
 #define toString(v)                                                            \
@@ -90,12 +110,20 @@ void _assertNotEqualsDouble(double actual, double expected, char *file,
   _assertEqualsFloat(actual, expected, __FILE__, __LINE__)
 #define assertEqualsDouble(actual, expected)                                   \
   _assertEqualsDouble(actual, expected, __FILE__, __LINE__)
+#define assertEqualsPtr(actual, expected)                                      \
+  _assertEqualsPtr(actual, expected, __FILE__, __LINE__)
+#define assertEqualsChar(actual, expected)                                     \
+  _assertEqualsChar(actual, expected, __FILE__, __LINE__)
 
 #define assertNotEqualsInt(actual, expected)                                   \
-  _assertEqualsNotInt(actual, expected, __FILE__, __LINE__)
+  _assertNotEqualsInt(actual, expected, __FILE__, __LINE__)
 #define assertNotEqualsUint(actual, expected)                                  \
-  _assertEqualsNotUint(actual, expected, __FILE__, __LINE__)
+  _assertNotEqualsUint(actual, expected, __FILE__, __LINE__)
 #define assertNotEqualsFloat(actual, expected)                                 \
-  _assertEqualsNotFloat(actual, expected, __FILE__, __LINE__)
+  _assertNotEqualsFloat(actual, expected, __FILE__, __LINE__)
 #define assertNotEqualsDouble(actual, expected)                                \
-  _assertEqualsNotDouble(actual, expected, __FILE__, __LINE__)
+  _assertNotEqualsDouble(actual, expected, __FILE__, __LINE__)
+#define assertNotEqualsPtr(actual, expected)                                   \
+  _assertNotEqualsPtr(actual, expected, __FILE__, __LINE__)
+#define assertNotEqualsChar(actual, expected)                                  \
+  _assertNotEqualsChar(actual, expected, __FILE__, __LINE__)
