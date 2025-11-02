@@ -1,11 +1,11 @@
 #include "../arena.h"
-#include "platform_arena.h"
+#include "../allocator/platform_allocator.h"
 
 #include <stdint.h>
 #include <string.h>
 
 #ifdef __linux__
-#include "linux_arena.c"
+#include "../allocator/linux_allocator.c"
 #endif /* ifdef LINUX  */
 #ifdef WINDOWS
 // include windows specific arena code
