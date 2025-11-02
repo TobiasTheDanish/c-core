@@ -132,3 +132,59 @@ void CalcDownwardDependentSizes(UiWidget *w) {
     }
   }
 }
+
+Bool WidgetIsDownwardDependent(UiWidget *w) {
+  UiSizeKind xKind = w->sizes[UiAxis_X].kind;
+  UiSizeKind yKind = w->sizes[UiAxis_Y].kind;
+
+  return xKind & DownwardDependentKind || yKind & DownwardDependentKind;
+}
+
+void SolveLayoutCollisions(UiWidget *w) {
+  if (w->right == 0) {
+    return;
+  }
+
+  UiWidget *child = w->right;
+  while (child) {
+    SolveLayoutCollisions(child);
+
+    child = child->left;
+  }
+
+  if (WidgetIsDownwardDependent(w)) {
+    CalcDownwardDependentSizes(w);
+  }
+
+  float TotalChildDim[UiAxis_COUNT] = {0};
+  for (int axis = UiAxis_X; axis < UiAxis_COUNT; axis++) {
+    child = w->right;
+    while (child) {
+      TotalChildDim[axis] += child->dimensions[axis];
+
+      child = child->left;
+    }
+  }
+
+  for (int axis = UiAxis_X; axis < UiAxis_COUNT; axis++) {
+    if (TotalChildDim[axis] > w->dimensions[axis]) {
+      float violation = TotalChildDim[axis] - w->dimensions[axis];
+
+      child = w->right;
+      while (child) {
+        float maxSizeDecrease =
+            child->dimensions[axis] -
+            (child->dimensions[axis] * (1 - child->sizes[axis].strictness));
+        float decrease =
+            maxSizeDecrease >= violation ? violation : maxSizeDecrease;
+
+        child->dimensions[axis] -= decrease;
+        violation -= decrease;
+
+        child = child->left;
+      }
+    }
+  }
+}
+
+void CalcRelPositions(UiWidget *w) {}

@@ -17,12 +17,14 @@ typedef enum {
 } UiAxis;
 
 typedef enum {
-  UiSizeKind_PIXELS,
-  UiSizeKind_TEXT,
-  UiSizeKind_PERCENTOFPARENT,
-  UiSizeKind_CHILDRENSUM,
-  UiSizeKind_CHILDRENMAX,
+  UiSizeKind_PIXELS = (1 << 0),
+  UiSizeKind_TEXT = (1 << 1),
+  UiSizeKind_PERCENTOFPARENT = (1 << 2),
+  UiSizeKind_CHILDRENSUM = (1 << 3),
+  UiSizeKind_CHILDRENMAX = (1 << 4),
 } UiSizeKind;
+
+#define DownwardDependentKind (UiSizeKind_CHILDRENMAX | UiSizeKind_CHILDRENSUM)
 
 typedef struct {
   UiSizeKind kind;
