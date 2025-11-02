@@ -38,12 +38,18 @@ String StringConcat(String s, String o);
 extern "C" {
 #endif // __cplusplus
 
-#ifndef ARENA_IMPLEMENTATION
-#define ARENA_IMPLEMENTATION
+#ifndef ALLOCATOR_IMPLEMENTATION
+#define ALLOCATOR_IMPLEMENTATION
 #endif
-#include "./arena.h"
+#include "allocator.h"
 
-Arena arena = {0};
+#define __Alloc(b) AllocMemory(b)
+#define __Realloc(p, b) ReallocMemory((p), (b))
+#define __Free(p) FreeMemory(p)
+
+#define __AllocString(c) __Alloc((sizeof(char) * (c)) + sizeof(StringMeta))
+#define __ReallocString(s, c)                                                  \
+  __Realloc(_StringMeta(s), (sizeof(char) * (c)) + sizeof(StringMeta))
 
 typedef struct {
   int32_t length;
@@ -70,8 +76,7 @@ String StringFromCString(char *s) {
 String StringFromCStringL(char *s, int32_t len) {
   int32_t cap = len ? len * 2 : 4;
 
-  String m =
-      (String)ArenaAlloc(&arena, sizeof(char) * cap + sizeof(StringMeta));
+  String m = (String)__AllocString(cap);
 
   m = m + sizeof(StringMeta);
   _StringMeta(m)->length = len;
@@ -83,6 +88,8 @@ String StringFromCStringL(char *s, int32_t len) {
 
   return m;
 }
+
+void StringFree(String s) { __Free(s); }
 
 int32_t StringLength(String s) {
   StringMeta *m = _StringMeta(s);
@@ -101,8 +108,7 @@ String StringMaybeGrow(String s, int32_t addLen) {
     if (minCap < StringCap(s) * 2) {
       minCap = StringCap(s) * 2;
     }
-    String m = (String)ArenaRealloc(&arena, _StringMeta(s),
-                                    sizeof(char) * minCap + sizeof(StringMeta));
+    String m = (String)__ReallocString(s, minCap);
 
     s = m + sizeof(StringMeta);
     _StringMeta(s)->cap = minCap;

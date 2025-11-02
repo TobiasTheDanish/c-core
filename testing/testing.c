@@ -1,12 +1,10 @@
-#include "../arena.h"
+#include "../allocator.h"
 #include "platform_testing.h"
 #include <stdio.h>
 
 #ifdef __linux__
 #include "linux_testing.c"
 #endif /* ifdef __linux__ */
-
-Arena a = {0};
 
 void _assert(Bool test, char *msg, char *file, int line) {
   int32_t fileLen = 0;
@@ -17,9 +15,10 @@ void _assert(Bool test, char *msg, char *file, int line) {
   }
 
   int32_t bufSize = fileLen + msgLen + 30;
-  char *buf = ArenaAlloc(&a, bufSize * sizeof(char));
+  char *buf = AllocMemory(bufSize * sizeof(char));
   snprintf(buf, bufSize, "Assertion failed %s:%d\n\t%s", file, line, msg);
   platformAssert(test, buf);
+  FreeMemory(buf);
 }
 
 void _assertEqualsInt(int64_t actual, int64_t expected, char *file, int line) {
