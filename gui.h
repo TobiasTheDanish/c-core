@@ -54,9 +54,10 @@ typedef struct {
 
 typedef struct UI_WIDGET {
   struct UI_WIDGET *parent;
-  struct UI_WIDGET *left;      // siblings
-  struct UI_WIDGET *right;     // children
-  struct UI_WIDGET *rightMost; // last child
+  struct UI_WIDGET *nextSibling; // siblings
+  struct UI_WIDGET *prevSibling; // siblings
+  struct UI_WIDGET *right;       // children
+  struct UI_WIDGET *rightMost;   // last child
 
   UiSize sizes[UiAxis_COUNT];
 
@@ -72,19 +73,16 @@ typedef struct {
   float maxSize[UiAxis_COUNT];
 } UiContext;
 
-void BeginDrawing(UiContext *ctx);
+void BeginDrawing(UiContext *ctx, UiWidget *root);
 void EndDrawing(UiContext *ctx);
 
 void PushChildWidget(UiContext *ctx, UiWidget *w);
 void PushParentWidget(UiContext *ctx, UiWidget *w);
 void PopParentWidget(UiContext *ctx);
 
-#endif // !CORE_GUI_H
 #ifdef GUI_IMPLEMENTATION
-#ifndef IMPLEMENTATION_GUARD
-#define IMPLEMENTATION_GUARD
 
 #include "gui/gui.c"
 
-#endif // !IMPLEMENTATION_GUARD
 #endif // GUI_IMPLEMENTATION
+#endif // !CORE_GUI_H

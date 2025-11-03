@@ -1,6 +1,7 @@
 #include "../gui.h"
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
 
 void CalcWidgetSizes(UiWidget *w);
 void CalcStandaloneSizes(UiWidget *w);
@@ -11,8 +12,8 @@ void SolveLayoutCollisions(UiWidget *w);
 
 void CalcRelPositions(UiWidget *w);
 
-void BeginDrawing(UiContext *ctx) {
-  *ctx->root = (UiWidget){0};
+void BeginDrawing(UiContext *ctx, UiWidget *root) {
+  ctx->root = root;
   for (int axis = 0; axis < UiAxis_COUNT; axis++) {
     ctx->root->sizes[axis] = (UiSize){
         .kind = UiSizeKind_PIXELS,
@@ -23,29 +24,37 @@ void BeginDrawing(UiContext *ctx) {
   }
 }
 
+void EndDrawing(UiContext *ctx) {
+  CalcWidgetSizes(ctx->root);
+  SolveLayoutCollisions(ctx->root);
+  CalcRelPositions(ctx->root);
+}
+
 void PushChildWidget(UiContext *ctx, UiWidget *w) {
   assert(ctx->root != 0);
 
+  w->parent = ctx->root;
   if (ctx->root->rightMost) {
-    ctx->root->rightMost->left = w;
+    ctx->root->rightMost->nextSibling = w;
   }
   if (!ctx->root->right) {
     ctx->root->right = w;
   }
+  w->prevSibling = ctx->root->rightMost;
   ctx->root->rightMost = w;
 }
+
 void PushParentWidget(UiContext *ctx, UiWidget *w) {
   assert(ctx->root != 0);
 
   PushChildWidget(ctx, w);
   ctx->root = w;
 }
+
 void PopParentWidget(UiContext *ctx) {
   assert(ctx->root->parent != 0);
   ctx->root = ctx->root->parent;
 }
-
-void EndDrawing(UiContext *ctx) { CalcWidgetSizes(ctx->root); }
 
 void CalcWidgetSizes(UiWidget *w) {
   CalcStandaloneSizes(w);
@@ -54,7 +63,7 @@ void CalcWidgetSizes(UiWidget *w) {
   UiWidget *child = w->right;
   while (child) {
     CalcWidgetSizes(child);
-    child = child->left;
+    child = child->nextSibling;
   }
 
   CalcDownwardDependentSizes(w);
@@ -74,14 +83,12 @@ void CalcStandaloneSizes(UiWidget *w) {
   }
 }
 void CalcUpwardDependentSizes(UiWidget *w) {
-  for (int axis = UiAxis_X; axis < UiAxis_COUNT; axis++) {
-    UiSize axisSize = w->sizes[axis];
-    switch (axisSize.kind) {
+  for (UiAxis axis = UiAxis_X; axis < UiAxis_COUNT; axis++) {
+    switch (w->sizes[axis].kind) {
     case UiSizeKind_PERCENTOFPARENT: {
       UiWidget *parent = w->parent;
       while (parent) {
-        if (parent->sizes[axis].kind == UiSizeKind_CHILDRENMAX ||
-            parent->sizes[axis].kind == UiSizeKind_CHILDRENSUM) {
+        if (parent->sizes[axis].kind & DownwardDependentKind) {
           parent = parent->parent;
           continue;
         }
@@ -89,7 +96,8 @@ void CalcUpwardDependentSizes(UiWidget *w) {
         break;
       }
       assert(parent != 0 && "ALL PARENTS RELIED ON CHILDREN SIZES");
-      w->dimensions[axis] = parent->dimensions[axis] * (axisSize.value / 100);
+      w->dimensions[axis] =
+          parent->dimensions[axis] * (w->sizes[axis].value / 100);
     } break;
 
     default:
@@ -111,7 +119,7 @@ void CalcDownwardDependentSizes(UiWidget *w) {
         if (child->dimensions[axis] > max) {
           max = child->dimensions[axis];
         }
-        child = child->left;
+        child = child->nextSibling;
       }
       w->dimensions[axis] = max;
     } break;
@@ -122,7 +130,7 @@ void CalcDownwardDependentSizes(UiWidget *w) {
         if (child->dimensions[axis] > sum) {
           sum += child->dimensions[axis];
         }
-        child = child->left;
+        child = child->nextSibling;
       }
       w->dimensions[axis] = sum;
     } break;
@@ -144,47 +152,67 @@ void SolveLayoutCollisions(UiWidget *w) {
   if (w->right == 0) {
     return;
   }
+  UiWidget *child;
 
-  UiWidget *child = w->right;
-  while (child) {
-    SolveLayoutCollisions(child);
-
-    child = child->left;
-  }
-
-  if (WidgetIsDownwardDependent(w)) {
-    CalcDownwardDependentSizes(w);
-  }
-
-  float TotalChildDim[UiAxis_COUNT] = {0};
-  for (int axis = UiAxis_X; axis < UiAxis_COUNT; axis++) {
+  if (w->data.kind == UiWidgetDataKind_Container) {
+    UiAxis axis = w->data.container.layoutAxis;
+    float TotalChildDim = 0;
     child = w->right;
     while (child) {
-      TotalChildDim[axis] += child->dimensions[axis];
-
-      child = child->left;
+      TotalChildDim += child->dimensions[axis];
+      child = child->nextSibling;
     }
-  }
 
-  for (int axis = UiAxis_X; axis < UiAxis_COUNT; axis++) {
-    if (TotalChildDim[axis] > w->dimensions[axis]) {
-      float violation = TotalChildDim[axis] - w->dimensions[axis];
-
+    if (TotalChildDim > w->dimensions[axis]) {
+      float violation = TotalChildDim - w->dimensions[axis];
       child = w->right;
       while (child) {
         float maxSizeDecrease =
-            child->dimensions[axis] -
-            (child->dimensions[axis] * (1 - child->sizes[axis].strictness));
+            (child->dimensions[axis] * (1.0 - child->sizes[axis].strictness));
         float decrease =
             maxSizeDecrease >= violation ? violation : maxSizeDecrease;
 
         child->dimensions[axis] -= decrease;
         violation -= decrease;
 
-        child = child->left;
+        child = child->nextSibling;
       }
+    }
+
+    child = w->right;
+    while (child) {
+      SolveLayoutCollisions(child);
+
+      child = child->nextSibling;
+    }
+
+    if (WidgetIsDownwardDependent(w)) {
+      CalcDownwardDependentSizes(w);
     }
   }
 }
 
-void CalcRelPositions(UiWidget *w) {}
+void CalcRelPositions(UiWidget *w) {
+  if (w->prevSibling != 0 &&
+      w->parent->data.kind == UiWidgetDataKind_Container) {
+    UiAxis axis = w->parent->data.container.layoutAxis;
+    w->relativePosition[axis] = w->prevSibling->relativePosition[axis] +
+                                w->prevSibling->dimensions[axis];
+  }
+
+  w->screenRect = (Rect){
+      .x = (w->parent ? w->parent->screenRect.x : 0) +
+           w->relativePosition[UiAxis_X],
+      .y = (w->parent ? w->parent->screenRect.y : 0) +
+           w->relativePosition[UiAxis_Y],
+      .w = w->dimensions[UiAxis_X],
+      .h = w->dimensions[UiAxis_Y],
+  };
+
+  UiWidget *child = w->right;
+  while (child) {
+    CalcRelPositions(child);
+
+    child = child->nextSibling;
+  }
+}
