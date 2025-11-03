@@ -4,12 +4,13 @@
 #include <stdint.h>
 #include <string.h>
 
+#ifndef ALLOCATOR_IMPLEMENTATION
 #ifdef __linux__
 #include "../allocator/linux_allocator.c"
+#elif __APPLE__
+#include "../allocator/apple_allocator.c"
 #endif /* ifdef LINUX  */
-#ifdef WINDOWS
-// include windows specific arena code
-#endif /* ifdef WINDOWS  */
+#endif /* #ifndef ALLOCATOR_IMPLEMENTATION */
 
 void ZeroMemory(void *mem, int32_t bytes) {
   uint8_t *m = mem;

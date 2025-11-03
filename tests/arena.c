@@ -1,3 +1,4 @@
+#define ARENA_IMPLEMENTATION
 #define TEST_IMPLEMENTATION
 #include "../arena.h"
 #include "../testing.h"

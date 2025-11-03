@@ -1,5 +1,5 @@
-#ifndef LINUX_ALLOCATOR_C
-#define LINUX_ALLOCATOR_C
+#ifndef APPLE_ALLOCATOR_C
+#define APPLE_ALLOCATOR_C
 
 #include <errno.h>
 #include <stdint.h>
@@ -62,4 +62,4 @@ void __FreeMemory(void *mem) {
   munmap(mem, len);
 }
 
-#endif /* ifndef LINUX_ALLOCATOR_C */
+#endif /* ifndef APPLE_ALLOCATOR_C */

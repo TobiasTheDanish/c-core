@@ -1,8 +1,13 @@
+#ifndef ALLOCATOR_IMPLEMENTATION
+#define ALLOCATOR_IMPLEMENTATION
+#endif /* ifndef ALLOCATOR_IMPLEMENTATION */
 #include "../allocator.h"
 #include "platform_testing.h"
 #include <stdio.h>
 
 #ifdef __linux__
+#include "linux_testing.c"
+#elif __APPLE__
 #include "linux_testing.c"
 #endif /* ifdef __linux__ */
 
@@ -23,13 +28,13 @@ void _assert(Bool test, char *msg, char *file, int line) {
 
 void _assertEqualsInt(int64_t actual, int64_t expected, char *file, int line) {
   char __buf[75] = {0};
-  snprintf(__buf, 75, "Actual: %ld. Expected: %ld\n", actual, expected);
+  snprintf(__buf, 75, "Actual: %lld. Expected: %lld\n", actual, expected);
   _assert(actual == expected, __buf, file, line);
 }
 void _assertEqualsUint(uint64_t actual, uint64_t expected, char *file,
                        int line) {
   char __buf[75] = {0};
-  snprintf(__buf, 75, "Actual: %ld. Expected: %ld\n", actual, expected);
+  snprintf(__buf, 75, "Actual: %llu. Expected: %llu\n", actual, expected);
   _assert(actual == expected, __buf, file, line);
 }
 void _assertEqualsFloat(float actual, float expected, char *file, int line) {
@@ -56,13 +61,13 @@ void _assertEqualsChar(char actual, char expected, char *file, int line) {
 void _assertNotEqualsInt(int64_t actual, int64_t expected, char *file,
                          int line) {
   char __buf[75] = {0};
-  snprintf(__buf, 75, "Actual: %ld. Expected: %ld\n", actual, expected);
+  snprintf(__buf, 75, "Actual: %lld. Expected: %lld\n", actual, expected);
   _assert(actual != expected, __buf, file, line);
 }
 void _assertNotEqualsUint(uint64_t actual, uint64_t expected, char *file,
                           int line) {
   char __buf[75] = {0};
-  snprintf(__buf, 75, "Actual: %ld. Expected: %ld\n", actual, expected);
+  snprintf(__buf, 75, "Actual: %llu. Expected: %llu\n", actual, expected);
   _assert(actual != expected, __buf, file, line);
 }
 void _assertNotEqualsFloat(float actual, float expected, char *file, int line) {
