@@ -22,7 +22,7 @@ int main() {
                   },
           },
   };
-  BeginDrawing(&ctx, &column);
+  GUIBegin(&ctx, &column);
 
   UiWidget row1 = {
       .sizes =
@@ -113,7 +113,7 @@ int main() {
 
   printf("WIDGET SUCCESS\n");
 
-  EndDrawing(&ctx);
+  GUIEnd(&ctx);
 
   UiWidget *cur = ctx.root->right;
 

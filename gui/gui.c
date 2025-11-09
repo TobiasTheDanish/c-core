@@ -1,7 +1,7 @@
 #include "../gui.h"
+#include "../render.h"
 #include <assert.h>
 #include <stdint.h>
-#include <stdio.h>
 
 void CalcWidgetSizes(UiWidget *w);
 void CalcStandaloneSizes(UiWidget *w);
@@ -12,7 +12,9 @@ void SolveLayoutCollisions(UiWidget *w);
 
 void CalcRelPositions(UiWidget *w);
 
-void BeginDrawing(UiContext *ctx, UiWidget *root) {
+void RenderWidgetTree(UiWidget *w);
+
+void GUIBegin(UiContext *ctx, UiWidget *root) {
   ctx->root = root;
   for (int axis = 0; axis < UiAxis_COUNT; axis++) {
     ctx->root->sizes[axis] = (UiSize){
@@ -24,10 +26,11 @@ void BeginDrawing(UiContext *ctx, UiWidget *root) {
   }
 }
 
-void EndDrawing(UiContext *ctx) {
+void GUIEnd(UiContext *ctx) {
   CalcWidgetSizes(ctx->root);
   SolveLayoutCollisions(ctx->root);
   CalcRelPositions(ctx->root);
+  RenderWidgetTree(ctx->root);
 }
 
 void PushChildWidget(UiContext *ctx, UiWidget *w) {
@@ -213,6 +216,32 @@ void CalcRelPositions(UiWidget *w) {
   while (child) {
     CalcRelPositions(child);
 
+    child = child->nextSibling;
+  }
+}
+
+void RenderWidget(UiWidget *w) {
+  Color c;
+  switch (w->data.kind) {
+  case UiWidgetDataKind_Container:
+    c = w->data.container.bg;
+    break;
+  case UiWidgetDataKind_Text:
+    c = w->data.text.bg;
+    break;
+  case UiWidgetDataKind_None:
+    return;
+  }
+
+  DrawRect(w->screenRect, c);
+}
+
+void RenderWidgetTree(UiWidget *w) {
+  RenderWidget(w);
+
+  UiWidget *child = w->right;
+  while (child) {
+    RenderWidgetTree(child);
     child = child->nextSibling;
   }
 }

@@ -2,13 +2,8 @@
 #define CORE_GUI_H
 
 #include "string.h"
+#include "types.h"
 #include <stdint.h>
-typedef struct {
-  float x;
-  float y;
-  float w;
-  float h;
-} Rect;
 
 typedef enum {
   UiAxis_X = 0,
@@ -45,9 +40,12 @@ typedef struct {
     } none;
     struct {
       String value;
+      Color bg;
+      Color text;
     } text;
     struct {
       UiAxis layoutAxis;
+      Color bg;
     } container;
   };
 } UiWidgetData;
@@ -73,12 +71,31 @@ typedef struct {
   float maxSize[UiAxis_COUNT];
 } UiContext;
 
-void BeginDrawing(UiContext *ctx, UiWidget *root);
-void EndDrawing(UiContext *ctx);
+void GUIBegin(UiContext *ctx, UiWidget *root);
+void GUIEnd(UiContext *ctx);
 
 void PushChildWidget(UiContext *ctx, UiWidget *w);
 void PushParentWidget(UiContext *ctx, UiWidget *w);
 void PopParentWidget(UiContext *ctx);
+
+#define GUI_UiSize(k, v, s)                                                    \
+  (UiSize) { .kind = (k), .value = (v), .strictness = (s), }
+
+#define GUI_WidgetSize(w, axis) (w).sizes[(axis)]
+#define GUI_ContainerWidget(axis)                                              \
+  (UiWidget) {                                                                 \
+    .data =                                                                    \
+    {.kind = UiWidgetDataKind_Container,                                       \
+     .container = {                                                            \
+         .layoutAxis = (axis),                                                 \
+     } }                                                                       \
+  }
+#define GUI_ContainerBgColor(w) (w).data.container.bg
+#define GUI_TextWidget()                                                       \
+  (UiWidget) {                                                                 \
+    .data = {.kind = UiWidgetDataKind_Text, .text = {0} }                      \
+  }
+#define GUI_TextBgColor(w) (w).data.text.bg
 
 #ifdef GUI_IMPLEMENTATION
 
