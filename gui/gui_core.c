@@ -3,6 +3,82 @@
 #include <assert.h>
 #include <stdint.h>
 
+#define ForEachChild(name, w)                                                  \
+  for (UiWidget *name = (w)->right; name != 0; name = name->nextSibling)
+
+uint64_t U64HashFromString(uint64_t hash, String s) {
+  int c;
+
+  while ((c = *s++) != 0) {
+    hash = ((hash << 5) + hash) + c;
+  }
+  return hash;
+}
+
+Bool UiKeyMatch(UiKey a, UiKey b) { return a.u64[0] == b.u64[0]; }
+
+UiKey UiZeroKey() {
+  UiKey res = {0};
+  return res;
+}
+
+UiKey UiKeyFromString(UiKey seed, String s) {
+  UiKey result = {0};
+  if (StringLength(s) != 0) {
+    result.u64[0] = U64HashFromString(seed.u64[0], s);
+  }
+  return result;
+}
+
+UiWidget *UiWidgetFromKey(UiContext *ctx, UiKey key) {
+  UiWidget *res = 0;
+
+  uint64_t slot = key.u64[0] % ctx->widgetTableSize;
+  for (UiWidget *w = ctx->widgetTable[slot].hash_first; w != 0;
+       w = w->hash_next) {
+    if (UiKeyMatch(key, w->key)) {
+      res = w;
+      break;
+    }
+  }
+
+  return res;
+}
+
+UiKey UiWidgetSeedKey(UiWidget *p) {
+  UiWidget *keyedParent = 0;
+  for (; p != 0; p = p->parent) {
+    if (!UiKeyMatch(p->key, UiZeroKey())) {
+      keyedParent = p;
+      break;
+    }
+  }
+
+  return keyedParent != 0 ? keyedParent->key : UiZeroKey();
+}
+
+UiKey UiActiveSeedKey(UiContext *ctx) { return UiWidgetSeedKey(ctx->root); }
+
+/** The String passed through 's' param is freed in this function */
+UiWidget *UiWidgetFromString(UiContext *ctx, String s) {
+  UiKey key = UiKeyFromString(UiActiveSeedKey(ctx), s);
+  StringFree(s);
+  UiWidget *w = UiWidgetFromKey(ctx, key);
+  Bool firstFrame = w == 0;
+
+  if (firstFrame) {
+    w = AllocMemory(sizeof(UiWidget));
+  }
+
+  w->key = key;
+
+  if (ctx->root) {
+    PushChildWidget(ctx, w);
+  }
+
+  return w;
+}
+
 void CalcWidgetSizes(UiWidget *w);
 void CalcStandaloneSizes(UiWidget *w);
 void CalcUpwardDependentSizes(UiWidget *w);
@@ -14,7 +90,22 @@ void CalcRelPositions(UiWidget *w);
 
 void RenderWidgetTree(UiWidget *w);
 
-void GUIBegin(UiContext *ctx, UiWidget *root) {
+void UpdateWidgetCache(UiContext *ctx, UiWidget *w);
+
+UiContext *GUICreateContext() {
+  UiContext *ctx = AllocMemory(sizeof(UiContext));
+
+  ctx->widgetTableSize = 4096;
+  ctx->widgetTable =
+      AllocMemory(ctx->widgetTableSize * sizeof(UiWidgetHashSlot));
+
+  return ctx;
+}
+
+void GUIBegin(UiContext *ctx) {
+  UiWidget *root = GUI_ColumnBegin(ctx, StringFromCString("root"));
+  GUI_ContainerBgColor(*root) = NewColor(.bgra = 0xFFFFFFFF);
+
   ctx->root = root;
   for (int axis = 0; axis < UiAxis_COUNT; axis++) {
     ctx->root->sizes[axis] = (UiSize){
@@ -31,6 +122,7 @@ void GUIEnd(UiContext *ctx) {
   SolveLayoutCollisions(ctx->root);
   CalcRelPositions(ctx->root);
   RenderWidgetTree(ctx->root);
+  UpdateWidgetCache(ctx, ctx->root);
 }
 
 void PushChildWidget(UiContext *ctx, UiWidget *w) {
@@ -47,27 +139,21 @@ void PushChildWidget(UiContext *ctx, UiWidget *w) {
   ctx->root->rightMost = w;
 }
 
-void PushParentWidget(UiContext *ctx, UiWidget *w) {
-  assert(ctx->root != 0);
+void PushParentWidget(UiContext *ctx, UiWidget *w) { ctx->root = w; }
 
-  PushChildWidget(ctx, w);
-  ctx->root = w;
-}
-
-void PopParentWidget(UiContext *ctx) {
+UiWidget *PopParentWidget(UiContext *ctx) {
   assert(ctx->root->parent != 0);
+  UiWidget *w = ctx->root;
   ctx->root = ctx->root->parent;
+
+  return w;
 }
 
 void CalcWidgetSizes(UiWidget *w) {
   CalcStandaloneSizes(w);
   CalcUpwardDependentSizes(w);
 
-  UiWidget *child = w->right;
-  while (child) {
-    CalcWidgetSizes(child);
-    child = child->nextSibling;
-  }
+  ForEachChild(child, w) { CalcWidgetSizes(child); }
 
   CalcDownwardDependentSizes(w);
 }
@@ -118,23 +204,16 @@ void CalcDownwardDependentSizes(UiWidget *w) {
     case UiSizeKind_CHILDRENMAX: {
       float max = -1;
       UiWidget *child = w->right;
-      while (child) {
+      ForEachChild(child, w) {
         if (child->dimensions[axis] > max) {
           max = child->dimensions[axis];
         }
-        child = child->nextSibling;
       }
       w->dimensions[axis] = max;
     } break;
     case UiSizeKind_CHILDRENSUM: {
-      float sum = -1;
-      UiWidget *child = w->right;
-      while (child) {
-        if (child->dimensions[axis] > sum) {
-          sum += child->dimensions[axis];
-        }
-        child = child->nextSibling;
-      }
+      float sum = 0;
+      ForEachChild(child, w) { sum += child->dimensions[axis]; }
       w->dimensions[axis] = sum;
     } break;
 
@@ -155,21 +234,15 @@ void SolveLayoutCollisions(UiWidget *w) {
   if (w->right == 0) {
     return;
   }
-  UiWidget *child;
 
   if (w->data.kind == UiWidgetDataKind_Container) {
     UiAxis axis = w->data.container.layoutAxis;
     float TotalChildDim = 0;
-    child = w->right;
-    while (child) {
-      TotalChildDim += child->dimensions[axis];
-      child = child->nextSibling;
-    }
+    ForEachChild(child, w) { TotalChildDim += child->dimensions[axis]; }
 
     if (TotalChildDim > w->dimensions[axis]) {
       float violation = TotalChildDim - w->dimensions[axis];
-      child = w->right;
-      while (child) {
+      ForEachChild(child, w) {
         float maxSizeDecrease =
             (child->dimensions[axis] * (1.0 - child->sizes[axis].strictness));
         float decrease =
@@ -177,17 +250,10 @@ void SolveLayoutCollisions(UiWidget *w) {
 
         child->dimensions[axis] -= decrease;
         violation -= decrease;
-
-        child = child->nextSibling;
       }
     }
 
-    child = w->right;
-    while (child) {
-      SolveLayoutCollisions(child);
-
-      child = child->nextSibling;
-    }
+    ForEachChild(child, w) { SolveLayoutCollisions(child); }
 
     if (WidgetIsDownwardDependent(w)) {
       CalcDownwardDependentSizes(w);
@@ -212,12 +278,7 @@ void CalcRelPositions(UiWidget *w) {
       .h = w->dimensions[UiAxis_Y],
   };
 
-  UiWidget *child = w->right;
-  while (child) {
-    CalcRelPositions(child);
-
-    child = child->nextSibling;
-  }
+  ForEachChild(child, w) { CalcRelPositions(child); }
 }
 
 void RenderWidget(UiWidget *w) {
@@ -239,9 +300,23 @@ void RenderWidget(UiWidget *w) {
 void RenderWidgetTree(UiWidget *w) {
   RenderWidget(w);
 
-  UiWidget *child = w->right;
-  while (child) {
-    RenderWidgetTree(child);
-    child = child->nextSibling;
+  ForEachChild(child, w) { RenderWidgetTree(child); }
+}
+
+void UpdateWidgetCache(UiContext *ctx, UiWidget *w) {
+  uint64_t slotIdx = w->key.u64[0] % ctx->widgetTableSize;
+  UiWidgetHashSlot *slot = &ctx->widgetTable[slotIdx];
+
+  if (slot->hash_first == 0) {
+    slot->hash_first = w;
   }
+
+  w->hash_prev = slot->hash_last;
+  if (slot->hash_last != 0) {
+    slot->hash_last->hash_next = w;
+  }
+
+  slot->hash_last = w;
+
+  ForEachChild(child, w) { UpdateWidgetCache(ctx, child); }
 }

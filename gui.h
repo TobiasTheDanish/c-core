@@ -5,6 +5,15 @@
 #include "types.h"
 #include <stdint.h>
 
+typedef struct {
+  uint64_t u64[1];
+} UiKey;
+
+typedef enum {
+  UiWidgetFlag_Container = (1 << 0),
+  UiWidgetFlag_DisplayText = (1 << 1),
+} UiWidgetFlags;
+
 typedef enum {
   UiAxis_X = 0,
   UiAxis_Y,
@@ -57,6 +66,11 @@ typedef struct UI_WIDGET {
   struct UI_WIDGET *right;       // children
   struct UI_WIDGET *rightMost;   // last child
 
+  struct UI_WIDGET *hash_next;
+  struct UI_WIDGET *hash_prev;
+
+  UiKey key;
+
   UiSize sizes[UiAxis_COUNT];
 
   float relativePosition[UiAxis_COUNT];
@@ -67,28 +81,44 @@ typedef struct UI_WIDGET {
 } UiWidget;
 
 typedef struct {
+  UiWidget *hash_first;
+  UiWidget *hash_last;
+} UiWidgetHashSlot;
+
+typedef struct {
   UiWidget *root;
   float maxSize[UiAxis_COUNT];
+
+  uint64_t widgetTableSize;
+  UiWidgetHashSlot *widgetTable;
 } UiContext;
 
-void GUIBegin(UiContext *ctx, UiWidget *root);
+UiContext *GUICreateContext();
+UiWidget *UiWidgetFromString(UiContext *ctx, String s);
+
+void GUIBegin(UiContext *ctx);
 void GUIEnd(UiContext *ctx);
 
 void PushChildWidget(UiContext *ctx, UiWidget *w);
 void PushParentWidget(UiContext *ctx, UiWidget *w);
-void PopParentWidget(UiContext *ctx);
+UiWidget *PopParentWidget(UiContext *ctx);
+
+/* UI_WIDGETS */
+
+UiWidget *GUI_RowBegin(UiContext *ctx, String name);
+void GUI_RowEnd(UiContext *ctx);
+UiWidget *GUI_ColumnBegin(UiContext *ctx, String name);
+void GUI_ColumnEnd(UiContext *ctx);
 
 #define GUI_UiSize(k, v, s)                                                    \
   (UiSize) { .kind = (k), .value = (v), .strictness = (s), }
 
 #define GUI_WidgetSize(w, axis) (w).sizes[(axis)]
-#define GUI_ContainerWidget(axis)                                              \
-  (UiWidget) {                                                                 \
-    .data =                                                                    \
-    {.kind = UiWidgetDataKind_Container,                                       \
-     .container = {                                                            \
-         .layoutAxis = (axis),                                                 \
-     } }                                                                       \
+#define GUI_ContainerData(axis)                                                \
+  (UiWidgetData) {                                                             \
+    .kind = UiWidgetDataKind_Container, .container = {                         \
+      .layoutAxis = (axis),                                                    \
+    }                                                                          \
   }
 #define GUI_ContainerBgColor(w) (w).data.container.bg
 #define GUI_TextWidget()                                                       \
@@ -99,7 +129,8 @@ void PopParentWidget(UiContext *ctx);
 
 #ifdef GUI_IMPLEMENTATION
 
-#include "gui/gui.c"
+#include "gui/gui_core.c"
+#include "gui/gui_widget.c"
 
 #endif // GUI_IMPLEMENTATION
 #endif // !CORE_GUI_H

@@ -6,6 +6,8 @@
 
 #define assertNull(p)
 #define assertNotNull(p)
+#define assertTrue(actual)
+#define assertFalse(actual)
 
 #define assertEqualsInt(actual, expected)
 #define assertEqualsUint(actual, expected)

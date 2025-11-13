@@ -1,121 +1,99 @@
 #include <stdio.h>
+#define RENDER_IMPLEMENTATION
 #define GUI_IMPLEMENTATION
 #include "../gui.h"
 #define TEST_IMPLEMENTATION
 #include "../testing.h"
 
 int main() {
-  UiContext ctx = {
-      .maxSize =
-          {
-              [UiAxis_X] = 100,
-              [UiAxis_Y] = 100,
-          },
-  };
-  UiWidget column = {
-      .data =
-          {
-              .kind = UiWidgetDataKind_Container,
-              .container =
-                  {
-                      .layoutAxis = UiAxis_Y,
-                  },
-          },
-  };
-  GUIBegin(&ctx, &column);
+  UiContext *ctx = GUICreateContext();
+  ctx->maxSize[UiAxis_X] = 100;
+  ctx->maxSize[UiAxis_Y] = 100;
 
-  UiWidget row1 = {
-      .sizes =
-          {
-              [UiAxis_X] =
-                  {
-                      .kind = UiSizeKind_PERCENTOFPARENT,
-                      .value = 100,
-                      .strictness = 1,
-                  },
-              [UiAxis_Y] =
-                  {
-                      .kind = UiSizeKind_PERCENTOFPARENT,
-                      .value = 50,
-                      .strictness = 1,
-                  },
-          },
-      .data =
-          {
-              .kind = UiWidgetDataKind_Container,
-              .container =
-                  {
-                      .layoutAxis = UiAxis_X,
-                  },
-          },
-  };
-  UiWidget row2 = row1;
-  PushParentWidget(&ctx, &row1);
-  assertEqualsPtr(ctx.root, &row1);
+  GUIBegin(ctx);
+
+  UiWidget *row1 = GUI_RowBegin(ctx, StringFromCString("row1"));
+  assertEqualsPtr(ctx->root, row1);
+  GUI_WidgetSize(*row1, UiAxis_X) =
+      GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1);
+
+  GUI_WidgetSize(*row1, UiAxis_Y) =
+      GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 50, 1);
 
   // insert children
-  UiWidget box1 = {
-      .sizes =
-          {
-              [UiAxis_X] =
-                  {
-                      .kind = UiSizeKind_PIXELS,
-                      .value = 40,
-                      .strictness = 1,
-                  },
-              [UiAxis_Y] =
-                  {
-                      .kind = UiSizeKind_PERCENTOFPARENT,
-                      .value = 100,
-                      .strictness = 1,
-                  },
-          },
-  };
-  UiWidget box2 = box1;
-  UiWidget box3 = box1;
-  UiWidget box4 = box1;
-  UiWidget box5 = box4;
-  PushChildWidget(&ctx, &box1);
-  assertEqualsPtr(ctx.root->right, &box1);
-  assertEqualsPtr(ctx.root->rightMost, &box1);
+  UiWidget *box1 = GUI_RowBegin(ctx, StringFromCString("box1"));
+  GUI_WidgetSize(*box1, UiAxis_X) = GUI_UiSize(UiSizeKind_PIXELS, 40, 1);
 
-  box2.sizes[UiAxis_X].value = 20;
-  PushChildWidget(&ctx, &box2);
-  assertEqualsPtr(ctx.root->rightMost, &box2);
+  GUI_WidgetSize(*box1, UiAxis_Y) =
+      GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1);
+  GUI_RowEnd(ctx);
+  assertEqualsPtr(ctx->root->right, box1);
+  assertEqualsPtr(ctx->root->rightMost, box1);
+  UiWidget *box2 = GUI_RowBegin(ctx, StringFromCString("box2"));
+  GUI_WidgetSize(*box2, UiAxis_X) = GUI_UiSize(UiSizeKind_PIXELS, 20, 1);
 
-  PushChildWidget(&ctx, &box3);
-  assertEqualsPtr(ctx.root->rightMost, &box3);
+  GUI_WidgetSize(*box2, UiAxis_Y) =
+      GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1);
+  GUI_RowEnd(ctx);
+  assertEqualsPtr(ctx->root->right, box1);
+  assertEqualsPtr(ctx->root->rightMost, box2);
 
-  PopParentWidget(&ctx);
-  assertEqualsPtr(ctx.root, &column);
+  UiWidget *box3 = GUI_RowBegin(ctx, StringFromCString("box3"));
+  GUI_WidgetSize(*box3, UiAxis_X) = GUI_UiSize(UiSizeKind_PIXELS, 40, 1);
 
-  PushParentWidget(&ctx, &row2);
-  assertEqualsPtr(ctx.root, &row2);
+  GUI_WidgetSize(*box3, UiAxis_Y) =
+      GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1);
+  GUI_RowEnd(ctx);
+  assertEqualsPtr(ctx->root->right, box1);
+  assertEqualsPtr(ctx->root->rightMost, box3);
 
+  GUI_RowEnd(ctx);
+  assertNotEqualsPtr(ctx->root, row1);
+
+  UiWidget *row2 = GUI_RowBegin(ctx, StringFromCString("row2"));
+  assertEqualsPtr(ctx->root, row2);
+  GUI_WidgetSize(*row2, UiAxis_X) =
+      GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1);
+
+  GUI_WidgetSize(*row2, UiAxis_Y) =
+      GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 50, 1);
+
+  UiWidget *box4 = GUI_RowBegin(ctx, StringFromCString("box4"));
   // insert children
-  box4.sizes[UiAxis_X].kind = UiSizeKind_PERCENTOFPARENT;
-  box4.sizes[UiAxis_X].value = 75;
-  box4.sizes[UiAxis_X].strictness = 0.666666666666;
-  PushChildWidget(&ctx, &box4);
-  assertEqualsPtr(box4.parent, &row2);
-  assertEqualsPtr(ctx.root->right, &box4);
-  assertEqualsPtr(ctx.root->rightMost, &box4);
+  GUI_WidgetSize(*box4, UiAxis_X) =
+      GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 75, 0.666666666666);
 
-  box5.sizes[UiAxis_X].kind = UiSizeKind_PERCENTOFPARENT;
-  box5.sizes[UiAxis_X].value = 75;
-  box5.sizes[UiAxis_X].strictness = 0.666666666666;
-  PushChildWidget(&ctx, &box5);
-  assertEqualsPtr(ctx.root->rightMost, &box5);
-  assertEqualsPtr(&box4, box5.prevSibling);
-  assertEqualsPtr(&box5, box4.nextSibling);
+  GUI_WidgetSize(*box4, UiAxis_Y) =
+      GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1);
+  GUI_RowEnd(ctx);
+  assertEqualsPtr(box4->parent, row2);
+  assertEqualsPtr(ctx->root->right, box4);
+  assertEqualsPtr(ctx->root->rightMost, box4);
 
-  PopParentWidget(&ctx);
+  UiWidget *box5 = GUI_RowBegin(ctx, StringFromCString("box5"));
+  GUI_WidgetSize(*box5, UiAxis_X) =
+      GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 75, 0.666666666666);
+
+  GUI_WidgetSize(*box5, UiAxis_Y) =
+      GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1);
+  GUI_RowEnd(ctx);
+  assertEqualsPtr(box5->parent, row2);
+  assertEqualsPtr(ctx->root->right, box4);
+  assertEqualsPtr(ctx->root->rightMost, box5);
+  assertEqualsPtr(box4, box5->prevSibling);
+  assertEqualsPtr(box5, box4->nextSibling);
+
+  GUI_RowEnd(ctx);
+  assertNotEqualsPtr(ctx->root, &row2);
 
   printf("WIDGET SUCCESS\n");
 
-  GUIEnd(&ctx);
+  GUIEnd(ctx);
 
-  UiWidget *cur = ctx.root->right;
+  UiWidget *cur = ctx->root->right;
+
+  assertTrue(UiKeyMatch(cur->key, UiKeyFromString(UiWidgetSeedKey(cur->parent),
+                                                  StringFromCString("row1"))));
 
   assertEqualsFloat(cur->relativePosition[UiAxis_X], 0);
   assertEqualsFloat(cur->relativePosition[UiAxis_Y], 0);
@@ -125,6 +103,9 @@ int main() {
   assertEqualsFloat(cur->dimensions[UiAxis_Y], 50);
 
   cur = cur->right;
+  assertTrue(UiKeyMatch(cur->key, UiKeyFromString(UiWidgetSeedKey(cur->parent),
+                                                  StringFromCString("box1"))));
+
   assertEqualsFloat(cur->relativePosition[UiAxis_X], 0);
   assertEqualsFloat(cur->relativePosition[UiAxis_Y], 0);
   assertEqualsFloat(cur->screenRect.x, 0);
@@ -133,6 +114,8 @@ int main() {
   assertEqualsFloat(cur->dimensions[UiAxis_Y], 50);
 
   cur = cur->nextSibling;
+  assertTrue(UiKeyMatch(cur->key, UiKeyFromString(UiWidgetSeedKey(cur->parent),
+                                                  StringFromCString("box2"))));
   assertEqualsFloat(cur->relativePosition[UiAxis_X], 40);
   assertEqualsFloat(cur->relativePosition[UiAxis_Y], 0);
   assertEqualsFloat(cur->screenRect.x, 40);
@@ -141,6 +124,8 @@ int main() {
   assertEqualsFloat(cur->dimensions[UiAxis_Y], 50);
 
   cur = cur->nextSibling;
+  assertTrue(UiKeyMatch(cur->key, UiKeyFromString(UiWidgetSeedKey(cur->parent),
+                                                  StringFromCString("box3"))));
   assertEqualsFloat(cur->relativePosition[UiAxis_X], 60);
   assertEqualsFloat(cur->relativePosition[UiAxis_Y], 0);
   assertEqualsFloat(cur->screenRect.x, 60);
@@ -149,6 +134,8 @@ int main() {
   assertEqualsFloat(cur->dimensions[UiAxis_Y], 50);
 
   cur = cur->parent->nextSibling;
+  assertTrue(UiKeyMatch(cur->key, UiKeyFromString(UiWidgetSeedKey(cur->parent),
+                                                  StringFromCString("row2"))));
   assertEqualsFloat(cur->relativePosition[UiAxis_X], 0);
   assertEqualsFloat(cur->relativePosition[UiAxis_Y], 50);
   assertEqualsFloat(cur->screenRect.x, 0);
@@ -157,6 +144,8 @@ int main() {
   assertEqualsFloat(cur->dimensions[UiAxis_Y], 50);
 
   cur = cur->right;
+  assertTrue(UiKeyMatch(cur->key, UiKeyFromString(UiWidgetSeedKey(cur->parent),
+                                                  StringFromCString("box4"))));
   assertEqualsFloat(cur->relativePosition[UiAxis_X], 0);
   assertEqualsFloat(cur->relativePosition[UiAxis_Y], 0);
   assertEqualsFloat(cur->screenRect.x, 0);
@@ -165,6 +154,8 @@ int main() {
   assertEqualsFloat(cur->dimensions[UiAxis_Y], 50);
 
   cur = cur->nextSibling;
+  assertTrue(UiKeyMatch(cur->key, UiKeyFromString(UiWidgetSeedKey(cur->parent),
+                                                  StringFromCString("box5"))));
   assertEqualsFloat(cur->relativePosition[UiAxis_X], 50);
   assertEqualsFloat(cur->relativePosition[UiAxis_Y], 0);
   assertEqualsFloat(cur->screenRect.x, 50);
@@ -172,5 +163,5 @@ int main() {
   assertEqualsFloat(cur->dimensions[UiAxis_X], 50);
   assertEqualsFloat(cur->dimensions[UiAxis_Y], 50);
 
-  printf("EndDrawing SUCCESS\n");
+  printf("GUIEnd SUCCESS\n");
 }

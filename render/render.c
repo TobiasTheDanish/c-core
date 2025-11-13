@@ -1,7 +1,13 @@
 #include <math.h>
 
+#ifdef CUSTOM_ALLOCATOR
 #define ALLOCATOR_IMPLEMENTATION
 #include "../allocator.h"
+#define ___AllocMemory(b) AllocMemory((b))
+#else
+#include <stdlib.h>
+#define ___AllocMemory(b) malloc((b))
+#endif
 #include "../render.h"
 
 void __AllocBitmap(Bitmap *b, int32_t width, int32_t height) {
@@ -11,7 +17,7 @@ void __AllocBitmap(Bitmap *b, int32_t width, int32_t height) {
   b->width = width;
   b->height = height;
   b->stride = b->width;
-  b->data = AllocMemory(dataInBytes);
+  b->data = ___AllocMemory(dataInBytes);
 }
 
 Bitmap renderBitmap = {0};
@@ -32,18 +38,18 @@ Pixmap __backbuffer;
 GC __gc;
 XImage *__windowImage;
 
-int __DestroyImage(XImage *i) {
-  FreeMemory(i->data);
-  FreeMemory(i);
-  return 0;
-}
+// int __DestroyImage(XImage *i) {
+//   FreeMemory(i->data);
+//   FreeMemory(i);
+//   return 0;
+// }
 
 XImage *__CreateImage(Display *d, Visual *visual, int depth, int width,
                       int height, char **buffer) {
   XImage *i =
       XCreateImage(d, visual, depth, ZPixmap, 0, *buffer, width, height, 32, 0);
 
-  i->f.destroy_image = __DestroyImage;
+  // i->f.destroy_image = __DestroyImage;
 
   return i;
 }

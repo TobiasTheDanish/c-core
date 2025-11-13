@@ -118,6 +118,8 @@ void _assertNotEqualsChar(char actual, char expected, char *file, int line) {
   _assertEqualsPtr(actual, expected, __FILE__, __LINE__)
 #define assertEqualsChar(actual, expected)                                     \
   _assertEqualsChar(actual, expected, __FILE__, __LINE__)
+#define assertTrue(actual)                                                     \
+  _assert((actual), "Expected true, but was false\n", __FILE__, __LINE__)
 
 #define assertNotEqualsInt(actual, expected)                                   \
   _assertNotEqualsInt(actual, expected, __FILE__, __LINE__)
@@ -131,3 +133,5 @@ void _assertNotEqualsChar(char actual, char expected, char *file, int line) {
   _assertNotEqualsPtr(actual, expected, __FILE__, __LINE__)
 #define assertNotEqualsChar(actual, expected)                                  \
   _assertNotEqualsChar(actual, expected, __FILE__, __LINE__)
+#define assertFalse(actual)                                                    \
+  _assert(!(actual), "Expected false, but was true\n", __FILE__, __LINE__)
