@@ -1,5 +1,5 @@
 #include "../gui.h"
-#include "../render.h"
+#include "../os.h"
 #include <assert.h>
 #include <stdint.h>
 
@@ -88,7 +88,7 @@ void SolveLayoutCollisions(UiWidget *w);
 
 void CalcRelPositions(UiWidget *w);
 
-void RenderWidgetTree(UiWidget *w);
+void RenderWidgetTree(UiWidget *w, OS_Window *win);
 
 void UpdateWidgetCache(UiContext *ctx, UiWidget *w);
 
@@ -117,11 +117,11 @@ void GUIBegin(UiContext *ctx) {
   }
 }
 
-void GUIEnd(UiContext *ctx) {
+void GUIEnd(UiContext *ctx, OS_Window *w) {
   CalcWidgetSizes(ctx->root);
   SolveLayoutCollisions(ctx->root);
   CalcRelPositions(ctx->root);
-  RenderWidgetTree(ctx->root);
+  RenderWidgetTree(ctx->root, w);
   UpdateWidgetCache(ctx, ctx->root);
 }
 
@@ -281,7 +281,7 @@ void CalcRelPositions(UiWidget *w) {
   ForEachChild(child, w) { CalcRelPositions(child); }
 }
 
-void RenderWidget(UiWidget *w) {
+void RenderWidget(UiWidget *w, OS_Window *win) {
   Color c;
   switch (w->data.kind) {
   case UiWidgetDataKind_Container:
@@ -294,13 +294,13 @@ void RenderWidget(UiWidget *w) {
     return;
   }
 
-  DrawRect(w->screenRect, c);
+  OS_DrawRect(win, w->screenRect, c);
 }
 
-void RenderWidgetTree(UiWidget *w) {
-  RenderWidget(w);
+void RenderWidgetTree(UiWidget *w, OS_Window *win) {
+  RenderWidget(w, win);
 
-  ForEachChild(child, w) { RenderWidgetTree(child); }
+  ForEachChild(child, w) { RenderWidgetTree(child, win); }
 }
 
 void UpdateWidgetCache(UiContext *ctx, UiWidget *w) {

@@ -1,6 +1,7 @@
 #ifndef CORE_GUI_H
 #define CORE_GUI_H
 
+#include "os.h"
 #include "string.h"
 #include "types.h"
 #include <stdint.h>
@@ -97,7 +98,7 @@ UiContext *GUICreateContext();
 UiWidget *UiWidgetFromString(UiContext *ctx, String s);
 
 void GUIBegin(UiContext *ctx);
-void GUIEnd(UiContext *ctx);
+void GUIEnd(UiContext *ctx, OS_Window *w);
 
 void PushChildWidget(UiContext *ctx, UiWidget *w);
 void PushParentWidget(UiContext *ctx, UiWidget *w);

@@ -1,9 +1,7 @@
-#define RENDER_IMPLEMENTATION
 #define GUI_IMPLEMENTATION
-#define INPUT_IMPLEMENTATION
+#define CORE_OS_IMPLEMENTATION
 #include "../gui.h"
-#include "../input.h"
-#include "../render.h"
+#include "../os.h"
 #include "../types.h"
 
 typedef struct {
@@ -12,19 +10,19 @@ typedef struct {
   int32_t windowHeight;
 } State;
 
-void handleEvent(Event e, State *s) {
+void handleEvent(OS_Event e, State *s) {
   switch (e.kind) {
-  case EventKind_WindowResize:
+  case OS_EventKind_WindowResize:
     s->windowWidth = e.resize.width;
     s->windowHeight = e.resize.height;
-    RendererWindowResize(e.resize.width, e.resize.height);
     return;
-  case EventKind_Quit:
+  case OS_EventKind_Quit: {
     s->quit = true;
     return;
-  case EventKind_KeyDown:
-  case EventKind_KeyUp:
-  case EventKind_MouseMove:
+  }
+  case OS_EventKind_KeyDown:
+  case OS_EventKind_KeyUp:
+  case OS_EventKind_MouseMove:
     return;
   }
 }
@@ -35,18 +33,17 @@ int main() {
       .windowHeight = 720,
       .quit = 0,
   };
-  CreateWindow(state.windowWidth, state.windowHeight);
-  RendererWindowResize(state.windowWidth, state.windowHeight);
+  OS_Window *w = OS_CreateWindow(state.windowWidth, state.windowHeight);
 
   UiContext *ctx = GUICreateContext();
 
   while (!state.quit) {
-    Event *events = 0;
+    OS_Event *events = 0;
     int32_t count = 0;
-    PollEvents(&events, &count);
+    OS_PollEvents(w, &events, &count);
 
     for (int i = 0; i < count; i++) {
-      Event e = events[i];
+      OS_Event e = events[i];
       handleEvent(e, &state);
     }
     FreeMemory(events);
@@ -115,9 +112,9 @@ int main() {
     GUI_ContainerBgColor(*row3) = NewColor(.bgra = 0xFF00FF00);
     GUI_RowEnd(ctx);
 
-    GUIEnd(ctx);
+    GUIEnd(ctx, w);
 
-    RendererBlit();
+    OS_BlitWindow(w);
   }
 
   return 0;
