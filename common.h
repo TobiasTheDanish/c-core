@@ -43,4 +43,8 @@ typedef union {
   };
 } Rect;
 
+int __i__ = 0;
+#define CORE_Defer(pre, post)                                                  \
+  for ((pre), (__i__ = 0); __i__ == 0; (post), __i__++)
+
 #endif

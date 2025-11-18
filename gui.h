@@ -6,6 +6,12 @@
 #include "string.h"
 #include <stdint.h>
 
+#define DefineStack(type)                                                      \
+  typedef struct type##_STACK_NODE {                                           \
+    type data;                                                                 \
+    struct type##_STACK_NODE *prev;                                            \
+  } type##Stack;
+
 typedef struct {
   uint64_t u64[1];
 } UiKey;
@@ -37,27 +43,11 @@ typedef struct {
   float strictness;
 } UiSize;
 
-typedef enum {
-  UiWidgetDataKind_None = 0,
-  UiWidgetDataKind_Text,
-  UiWidgetDataKind_Container,
-} UiWidgetDataKind;
-
 typedef struct {
-  UiWidgetDataKind kind;
-  union {
-    struct {
-    } none;
-    struct {
-      String value;
-      Color bg;
-      Color text;
-    } text;
-    struct {
-      UiAxis layoutAxis;
-      Color bg;
-    } container;
-  };
+  UiAxis layoutAxis;
+  String text;
+  Color bg;
+  Color content;
 } UiWidgetData;
 
 typedef struct UI_WIDGET {
@@ -86,6 +76,10 @@ typedef struct {
   UiWidget *hash_last;
 } UiWidgetHashSlot;
 
+DefineStack(Color);
+DefineStack(UiSize);
+DefineStack(UiAxis);
+
 typedef struct {
   UiWidget *root;
   float maxSize[UiAxis_COUNT];
@@ -93,6 +87,12 @@ typedef struct {
 
   uint64_t widgetTableSize;
   UiWidgetHashSlot *widgetTable;
+
+  ColorStack *bgColorStack;
+  ColorStack *contentColorStack;
+  UiSizeStack *widthStack;
+  UiSizeStack *heightStack;
+  UiAxisStack *layoutStack;
 } UiContext;
 
 typedef uint32_t UiSignalFlags;
@@ -117,12 +117,41 @@ void PushChildWidget(UiContext *ctx, UiWidget *w);
 void PushParentWidget(UiContext *ctx, UiWidget *w);
 UiWidget *PopParentWidget(UiContext *ctx);
 
+/* TRANSIENT UI STATES */
+
+void PushBgColor(UiContext *ctx, Color c);
+void PopBgColor(UiContext *ctx);
+void PushContentColor(UiContext *ctx, Color c);
+void PopContentColor(UiContext *ctx);
+
+void PushWidth(UiContext *ctx, UiSize s);
+void PopWidth(UiContext *ctx);
+void PushHeight(UiContext *ctx, UiSize s);
+void PopHeight(UiContext *ctx);
+
+void PushLayoutAxis(UiContext *ctx, UiAxis a);
+void PopLayoutAxis(UiContext *ctx);
+
+#define GUI_BgColor(ctx, c)                                                    \
+  CORE_Defer(PushBgColor((ctx), (c)), PopBgColor((ctx)))
+#define GUI_ContentColor(ctx, c)                                               \
+  CORE_Defer(PushContentColor((ctx), (c)), PopContentColor((ctx)))
+#define GUI_Width(ctx, c) CORE_Defer(PushWidth((ctx), (c)), PopWidth((ctx)))
+#define GUI_Height(ctx, c) CORE_Defer(PushHeight((ctx), (c)), PopHeight((ctx)))
+#define GUI_Layout(ctx, c) CORE_Defer(PushLayout((ctx), (c)), PopLayout((ctx)))
+
 /* UI_WIDGETS */
 
 UiWidget *GUI_RowBegin(UiContext *ctx, String name);
 UiSignal GUI_RowEnd(UiContext *ctx);
 UiWidget *GUI_ColumnBegin(UiContext *ctx, String name);
 UiSignal GUI_ColumnEnd(UiContext *ctx);
+
+#define GUI_Row(c, n) CORE_Defer(GUI_RowBegin((c), (n)), GUI_RowEnd((c)))
+#define GUI_Column(c, n)                                                       \
+  CORE_Defer(GUI_ColumnBegin((c), (n)), GUI_ColumnEnd((c)))
+
+/* UI DATA MACROS */
 
 #define GUI_Hovering(s) !!((s).f & UiSignalFlags_Hovering)
 

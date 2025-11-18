@@ -73,6 +73,13 @@ UiWidget *UiWidgetFromString(UiContext *ctx, String s) {
   w->key = key;
   w->parent = w->prevSibling = w->nextSibling = w->right = w->rightMost = 0;
 
+  w->sizes[UiAxis_X] = ctx->widthStack->data;
+  w->sizes[UiAxis_Y] = ctx->heightStack->data;
+
+  w->data.layoutAxis = ctx->layoutStack->data;
+  w->data.bg = ctx->bgColorStack->data;
+  w->data.content = ctx->contentColorStack->data;
+
   if (ctx->root) {
     PushChildWidget(ctx, w);
   }
@@ -108,12 +115,30 @@ void RenderWidgetTree(UiWidget *w, OS_Window *win);
 void ResetWidgetCache(UiContext *ctx);
 void UpdateWidgetCache(UiContext *ctx, UiWidget *w);
 
+#define InitStack(s, d)                                                        \
+  do {                                                                         \
+    (s) = AllocMemory(sizeof(typeof(*(s))));                                   \
+    (s)->data = (d);                                                           \
+  } while (false)
+
+void GUI_InitStacks(UiContext *ctx) {
+  InitStack(ctx->bgColorStack, NewColor(.bgra = 0xFF000000));
+  InitStack(ctx->contentColorStack, NewColor(.bgra = 0xFFFFFFFF));
+
+  InitStack(ctx->widthStack, GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1));
+  InitStack(ctx->heightStack, GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1));
+
+  InitStack(ctx->layoutStack, UiAxis_Y);
+}
+
 UiContext *GUICreateContext() {
   UiContext *ctx = AllocMemory(sizeof(UiContext));
 
   ctx->widgetTableSize = 4096;
   ctx->widgetTable =
       AllocMemory(ctx->widgetTableSize * sizeof(UiWidgetHashSlot));
+
+  GUI_InitStacks(ctx);
 
   return ctx;
 }
@@ -138,10 +163,11 @@ void GUIBegin(UiContext *ctx) {
   root->parent = root->prevSibling = root->nextSibling = root->right =
       root->rightMost = 0;
 
-  root->data = GUI_ContainerData(UiAxis_Y);
+  root->data.layoutAxis = ctx->layoutStack->data;
+  root->data.bg = ctx->bgColorStack->data;
+  root->data.content = ctx->contentColorStack->data;
 
   PushParentWidget(ctx, root);
-  GUI_ContainerBgColor(*root) = NewColor(.bgra = 0xFFFFFFFF);
 
   for (int axis = 0; axis < UiAxis_COUNT; axis++) {
     ctx->root->sizes[axis] = (UiSize){
@@ -272,36 +298,35 @@ void SolveLayoutCollisions(UiWidget *w) {
     return;
   }
 
-  if (w->data.kind == UiWidgetDataKind_Container) {
-    UiAxis axis = w->data.container.layoutAxis;
-    float TotalChildDim = 0;
-    ForEachChild(child, w) { TotalChildDim += child->dimensions[axis]; }
+  UiAxis axis = w->data.layoutAxis;
+  float TotalChildDim = 0;
+  ForEachChild(child, w) { TotalChildDim += child->dimensions[axis]; }
 
-    if (TotalChildDim > w->dimensions[axis]) {
-      float violation = TotalChildDim - w->dimensions[axis];
-      ForEachChild(child, w) {
-        float maxSizeDecrease =
-            (child->dimensions[axis] * (1.0 - child->sizes[axis].strictness));
-        float decrease =
-            maxSizeDecrease >= violation ? violation : maxSizeDecrease;
+  if (TotalChildDim > w->dimensions[axis]) {
+    float violation = TotalChildDim - w->dimensions[axis];
+    ForEachChild(child, w) {
+      float maxSizeDecrease =
+          (child->dimensions[axis] * (1.0 - child->sizes[axis].strictness));
+      float decrease =
+          maxSizeDecrease >= violation ? violation : maxSizeDecrease;
 
-        child->dimensions[axis] -= decrease;
-        violation -= decrease;
-      }
+      child->dimensions[axis] -= decrease;
+      violation -= decrease;
     }
+  }
 
-    ForEachChild(child, w) { SolveLayoutCollisions(child); }
+  ForEachChild(child, w) { SolveLayoutCollisions(child); }
 
-    if (WidgetIsDownwardDependent(w)) {
-      CalcDownwardDependentSizes(w);
-    }
+  if (WidgetIsDownwardDependent(w)) {
+    CalcDownwardDependentSizes(w);
   }
 }
 
 void CalcRelPositions(UiWidget *w) {
-  if (w->prevSibling != 0 &&
-      w->parent->data.kind == UiWidgetDataKind_Container) {
-    UiAxis axis = w->parent->data.container.layoutAxis;
+  assert(w != 0);
+
+  if (w->prevSibling != 0 && w->parent != 0) {
+    UiAxis axis = w->parent->data.layoutAxis;
     w->relativePosition[axis] = w->prevSibling->relativePosition[axis] +
                                 w->prevSibling->dimensions[axis];
   }
@@ -319,17 +344,7 @@ void CalcRelPositions(UiWidget *w) {
 }
 
 void RenderWidget(UiWidget *w, OS_Window *win) {
-  Color c;
-  switch (w->data.kind) {
-  case UiWidgetDataKind_Container:
-    c = w->data.container.bg;
-    break;
-  case UiWidgetDataKind_Text:
-    c = w->data.text.bg;
-    break;
-  case UiWidgetDataKind_None:
-    return;
-  }
+  Color c = w->data.bg;
 
   OS_DrawRect(win, w->screenRect, c);
 }
@@ -365,3 +380,43 @@ void UpdateWidgetCache(UiContext *ctx, UiWidget *w) {
 
   ForEachChild(child, w) { UpdateWidgetCache(ctx, child); }
 }
+
+#define StackPush(s, e)                                                        \
+  do {                                                                         \
+    (e)->prev = (s);                                                           \
+    (s) = (e);                                                                 \
+  } while (false)
+#define StackPop(s)                                                            \
+  do {                                                                         \
+    typeof(*(s)) *tmp = (s);                                                   \
+    (s) = (s)->prev;                                                           \
+    FreeMemory(tmp);                                                           \
+  } while (false)
+
+void PushBgColor(UiContext *ctx, Color c) {
+  ColorStack *e = AllocMemory(sizeof(ColorStack));
+  StackPush(ctx->bgColorStack, e);
+}
+void PopBgColor(UiContext *ctx) { StackPop(ctx->bgColorStack); }
+void PushContentColor(UiContext *ctx, Color c) {
+  ColorStack *e = AllocMemory(sizeof(ColorStack));
+  StackPush(ctx->contentColorStack, e);
+}
+void PopContentColor(UiContext *ctx) { StackPop(ctx->contentColorStack); }
+
+void PushWidth(UiContext *ctx, UiSize s) {
+  UiSizeStack *e = AllocMemory(sizeof(UiSizeStack));
+  StackPush(ctx->widthStack, e);
+}
+void PopWidth(UiContext *ctx) { StackPop(ctx->widthStack); }
+void PushHeight(UiContext *ctx, UiSize s) {
+  UiSizeStack *e = AllocMemory(sizeof(UiSizeStack));
+  StackPush(ctx->heightStack, e);
+}
+void PopHeight(UiContext *ctx) { StackPop(ctx->heightStack); }
+
+void PushLayoutAxis(UiContext *ctx, UiAxis a) {
+  UiAxisStack *e = AllocMemory(sizeof(UiAxisStack));
+  StackPush(ctx->layoutStack, e);
+}
+void PopLayoutAxis(UiContext *ctx) { StackPop(ctx->layoutStack); }
