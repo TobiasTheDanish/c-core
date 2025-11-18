@@ -88,7 +88,10 @@ int main() {
           GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1);
 
       GUI_ContainerBgColor(*box1) = NewColor(.bgra = 0xFFFF00FF);
-      GUI_ColumnEnd(ctx);
+
+      if (GUI_Hovering(GUI_ColumnEnd(ctx))) {
+        GUI_ContainerBgColor(*box1) = NewColor(.bgra = 0xFFAA00AA);
+      }
 
       UiWidget *box2 = GUI_ColumnBegin(ctx, StringFromCString("box2"));
       GUI_WidgetSize(*box2, UiAxis_X) =
@@ -98,7 +101,9 @@ int main() {
           GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1);
 
       GUI_ContainerBgColor(*box2) = NewColor(.bgra = 0xAAAAAAAA);
-      GUI_ColumnEnd(ctx);
+      if (GUI_Hovering(GUI_ColumnEnd(ctx))) {
+        GUI_ContainerBgColor(*box2) = NewColor(.bgra = 0x55555555);
+      }
 
       UiWidget *box3 = GUI_ColumnBegin(ctx, StringFromCString("box3"));
       GUI_WidgetSize(*box3, UiAxis_X) = GUI_UiSize(UiSizeKind_PIXELS, 40, 1);
@@ -107,7 +112,9 @@ int main() {
           GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1);
 
       GUI_ContainerBgColor(*box3) = NewColor(.bgra = 0xFFFF00FF);
-      GUI_ColumnEnd(ctx);
+      if (GUI_Hovering(GUI_ColumnEnd(ctx))) {
+        GUI_ContainerBgColor(*box3) = NewColor(.bgra = 0xFFAA00AA);
+      }
     }
     GUI_RowEnd(ctx);
 
