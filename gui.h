@@ -89,13 +89,26 @@ typedef struct {
 typedef struct {
   UiWidget *root;
   float maxSize[UiAxis_COUNT];
+  int32_t mouse[UiAxis_COUNT];
 
   uint64_t widgetTableSize;
   UiWidgetHashSlot *widgetTable;
 } UiContext;
 
+typedef uint32_t UiSignalFlags;
+enum {
+  UiSignalFlags_Hovering = (1 << 0),
+};
+
+typedef struct {
+  UiSignalFlags f;
+} UiSignal;
+
 UiContext *GUICreateContext();
+void GUI_SetMousePos(UiContext *ctx, int32_t mouseX, int32_t mouseY);
+
 UiWidget *UiWidgetFromString(UiContext *ctx, String s);
+UiSignal UiSignalFromWidget(UiContext *ctx, UiWidget *w);
 
 void GUIBegin(UiContext *ctx);
 void GUIEnd(UiContext *ctx, OS_Window *w);
@@ -107,9 +120,11 @@ UiWidget *PopParentWidget(UiContext *ctx);
 /* UI_WIDGETS */
 
 UiWidget *GUI_RowBegin(UiContext *ctx, String name);
-void GUI_RowEnd(UiContext *ctx);
+UiSignal GUI_RowEnd(UiContext *ctx);
 UiWidget *GUI_ColumnBegin(UiContext *ctx, String name);
-void GUI_ColumnEnd(UiContext *ctx);
+UiSignal GUI_ColumnEnd(UiContext *ctx);
+
+#define GUI_Hovering(s) !!((s).f & UiSignalFlags_Hovering)
 
 #define GUI_UiSize(k, v, s)                                                    \
   (UiSize) { .kind = (k), .value = (v), .strictness = (s), }

@@ -8,6 +8,8 @@ typedef struct {
   Bool quit;
   int32_t windowWidth;
   int32_t windowHeight;
+  int32_t mouseX;
+  int32_t mouseY;
 } State;
 
 void handleEvent(OS_Event e, State *s) {
@@ -20,9 +22,13 @@ void handleEvent(OS_Event e, State *s) {
     s->quit = true;
     return;
   }
+  case OS_EventKind_MouseMove: {
+    s->mouseX = e.mouseMove.x;
+    s->mouseY = e.mouseMove.y;
+    return;
+  }
   case OS_EventKind_KeyDown:
   case OS_EventKind_KeyUp:
-  case OS_EventKind_MouseMove:
     return;
   }
 }
@@ -48,6 +54,7 @@ int main() {
     }
     FreeMemory(events);
 
+    GUI_SetMousePos(ctx, state.mouseX, state.mouseY);
     ctx->maxSize[UiAxis_X] = state.windowWidth;
     ctx->maxSize[UiAxis_Y] = state.windowHeight;
 
@@ -61,7 +68,9 @@ int main() {
         GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 25, 1);
 
     GUI_ContainerBgColor(*row1) = NewColor(.bgra = 0xFFFF0000);
-    GUI_RowEnd(ctx);
+    if (GUI_Hovering(GUI_RowEnd(ctx))) {
+      GUI_ContainerBgColor(*row1) = NewColor(.bgra = 0xFFAA0000);
+    }
 
     UiWidget *row2 = GUI_RowBegin(ctx, StringFromCString("row2"));
     GUI_WidgetSize(*row2, UiAxis_X) =
@@ -110,7 +119,9 @@ int main() {
         GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 25, 1);
 
     GUI_ContainerBgColor(*row3) = NewColor(.bgra = 0xFF00FF00);
-    GUI_RowEnd(ctx);
+    if (GUI_Hovering(GUI_RowEnd(ctx))) {
+      GUI_ContainerBgColor(*row3) = NewColor(.bgra = 0xFF00AA00);
+    }
 
     GUIEnd(ctx, w);
 

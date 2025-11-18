@@ -19,7 +19,8 @@ const char *vert_shader_source =
     "{\n"
     "    uv.x = (gl_VertexID & 1);\n"
     "    uv.y = ((gl_VertexID >> 1) & 1);\n"
-    "    gl_Position = vec4(uv * 2.0 - 1.0, 0.0, 1.0);\n"
+    "    vec2 pos = uv * 2.0 - 1.0;\n"
+    "    gl_Position = vec4(pos.x, -pos.y, 0.0, 1.0);\n"
     "}\n";
 
 const char *frag_shader_source = "#version 330\n"

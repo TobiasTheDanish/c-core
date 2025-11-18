@@ -75,6 +75,9 @@ void OS_PollEvents(OS_Window *w, OS_Event **_events, int32_t *count) {
       int32_t height = w->w->r.h;
       glViewport(0, 0, width, height);
 
+      FreeMemory(w->frameBitmap.data);
+      __AllocBitmap(&w->frameBitmap, width, height);
+
       e = (OS_Event){
           .kind = OS_EventKind_WindowResize,
           .resize =

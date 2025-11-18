@@ -11,9 +11,9 @@ UiWidget *GUI_RowBegin(UiContext *ctx, String name) {
   return w;
 }
 
-void GUI_RowEnd(UiContext *ctx) {
+UiSignal GUI_RowEnd(UiContext *ctx) {
   UiWidget *w = PopParentWidget(ctx);
-  (void)w; // Test if w is hot or active
+  return UiSignalFromWidget(ctx, w);
 }
 
 /** The String passed through 'name' param is freed in this function */
@@ -27,7 +27,7 @@ UiWidget *GUI_ColumnBegin(UiContext *ctx, String name) {
   return w;
 }
 
-void GUI_ColumnEnd(UiContext *ctx) {
+UiSignal GUI_ColumnEnd(UiContext *ctx) {
   UiWidget *w = PopParentWidget(ctx);
-  (void)w; // Test if w is hot or active
+  return UiSignalFromWidget(ctx, w);
 }

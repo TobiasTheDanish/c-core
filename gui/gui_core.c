@@ -71,12 +71,27 @@ UiWidget *UiWidgetFromString(UiContext *ctx, String s) {
   }
 
   w->key = key;
+  w->parent = w->prevSibling = w->nextSibling = w->right = w->rightMost = 0;
 
   if (ctx->root) {
     PushChildWidget(ctx, w);
   }
 
   return w;
+}
+
+Bool Ui_PointInRect(int32_t px, int32_t py, Rect r) {
+  return ((r.x <= px && px <= r.x + r.w) && (r.y <= py && py <= r.y + r.h));
+}
+
+UiSignal UiSignalFromWidget(UiContext *ctx, UiWidget *w) {
+  UiSignal s = {0};
+  if (Ui_PointInRect(ctx->mouse[UiAxis_X], ctx->mouse[UiAxis_Y],
+                     w->screenRect)) {
+    s.f |= UiSignalFlags_Hovering;
+  }
+
+  return s;
 }
 
 void CalcWidgetSizes(UiWidget *w);
@@ -90,6 +105,7 @@ void CalcRelPositions(UiWidget *w);
 
 void RenderWidgetTree(UiWidget *w, OS_Window *win);
 
+void ResetWidgetCache(UiContext *ctx);
 void UpdateWidgetCache(UiContext *ctx, UiWidget *w);
 
 UiContext *GUICreateContext() {
@@ -102,11 +118,31 @@ UiContext *GUICreateContext() {
   return ctx;
 }
 
+void GUI_SetMousePos(UiContext *ctx, int32_t mouseX, int32_t mouseY) {
+  ctx->mouse[UiAxis_X] = mouseX;
+  ctx->mouse[UiAxis_Y] = mouseY;
+}
+
 void GUIBegin(UiContext *ctx) {
-  UiWidget *root = GUI_ColumnBegin(ctx, StringFromCString("root"));
+  String s = StringFromCString("root");
+  UiKey key = UiKeyFromString(UiZeroKey(), s);
+  StringFree(s);
+  UiWidget *root = UiWidgetFromKey(ctx, key);
+  Bool firstFrame = root == 0;
+
+  if (firstFrame) {
+    root = AllocMemory(sizeof(UiWidget));
+  }
+
+  root->key = key;
+  root->parent = root->prevSibling = root->nextSibling = root->right =
+      root->rightMost = 0;
+
+  root->data = GUI_ContainerData(UiAxis_Y);
+
+  PushParentWidget(ctx, root);
   GUI_ContainerBgColor(*root) = NewColor(.bgra = 0xFFFFFFFF);
 
-  ctx->root = root;
   for (int axis = 0; axis < UiAxis_COUNT; axis++) {
     ctx->root->sizes[axis] = (UiSize){
         .kind = UiSizeKind_PIXELS,
@@ -122,6 +158,7 @@ void GUIEnd(UiContext *ctx, OS_Window *w) {
   SolveLayoutCollisions(ctx->root);
   CalcRelPositions(ctx->root);
   RenderWidgetTree(ctx->root, w);
+  ResetWidgetCache(ctx);
   UpdateWidgetCache(ctx, ctx->root);
 }
 
@@ -301,6 +338,14 @@ void RenderWidgetTree(UiWidget *w, OS_Window *win) {
   RenderWidget(w, win);
 
   ForEachChild(child, w) { RenderWidgetTree(child, win); }
+}
+
+void ResetWidgetCache(UiContext *ctx) {
+  for (int i = 0; i < ctx->widgetTableSize; i++) {
+    UiWidgetHashSlot *slot = &(ctx->widgetTable[i]);
+    slot->hash_first = 0;
+    slot->hash_last = 0;
+  }
 }
 
 void UpdateWidgetCache(UiContext *ctx, UiWidget *w) {
