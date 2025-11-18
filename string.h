@@ -1,11 +1,9 @@
 #ifndef CORE_STRING_H
 #define CORE_STRING_H
-#include <stdio.h>
+#include "common.h"
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-
-#include <stdint.h>
 
 #define StringPush StringAdd
 

@@ -1,6 +1,6 @@
 #ifndef CORE_INPUT_H
 #define CORE_INPUT_H
-#include "types.h"
+#include "common.h"
 
 typedef enum {
   // EventKind_KeyDown events goes in the 'key' property

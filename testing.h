@@ -1,6 +1,6 @@
 #ifndef TESTING_H
 #define TESTING_H
-#include "types.h"
+#include "common.h"
 
 #ifndef TEST_IMPLEMENTATION
 

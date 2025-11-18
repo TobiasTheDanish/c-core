@@ -1,6 +1,6 @@
 #ifndef CORE_RENDER_H
 #define CORE_RENDER_H
-#include "types.h"
+#include "common.h"
 
 void CreateWindow(uint32_t windowWidth, uint32_t windowHeight);
 void RendererWindowResize(uint32_t width, uint32_t height);

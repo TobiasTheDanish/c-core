@@ -1,6 +1,6 @@
 #ifndef CORE_OS_H
 #define CORE_OS_H
-#include "types.h"
+#include "common.h"
 
 typedef struct OS_WINDOW OS_Window;
 typedef enum {

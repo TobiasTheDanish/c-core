@@ -1,8 +1,8 @@
 #define GUI_IMPLEMENTATION
 #define CORE_OS_IMPLEMENTATION
+#include "../common.h"
 #include "../gui.h"
 #include "../os.h"
-#include "../types.h"
 
 typedef struct {
   Bool quit;
