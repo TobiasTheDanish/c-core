@@ -84,6 +84,7 @@ typedef struct {
   UiWidget *root;
   float maxSize[UiAxis_COUNT];
   int32_t mouse[UiAxis_COUNT];
+  Bool mouseClicked;
 
   uint64_t widgetTableSize;
   UiWidgetHashSlot *widgetTable;
@@ -98,13 +99,16 @@ typedef struct {
 typedef uint32_t UiSignalFlags;
 enum {
   UiSignalFlags_Hovering = (1 << 0),
+  UiSignalFlags_Clicked = (1 << 1),
 };
 
 typedef struct {
+  UiWidget *w;
   UiSignalFlags f;
 } UiSignal;
 
 UiContext *GUICreateContext();
+void GUI_HandleEvents(UiContext *ctx, OS_Event *events, int32_t count);
 void GUI_SetMousePos(UiContext *ctx, int32_t mouseX, int32_t mouseY);
 
 UiWidget *UiWidgetFromString(UiContext *ctx, String s);
@@ -146,6 +150,7 @@ UiWidget *GUI_RowBegin(UiContext *ctx, String name);
 UiSignal GUI_RowEnd(UiContext *ctx);
 UiWidget *GUI_ColumnBegin(UiContext *ctx, String name);
 UiSignal GUI_ColumnEnd(UiContext *ctx);
+UiSignal GUI_Box(UiContext *ctx, String name);
 
 #define GUI_Row(c, n) CORE_Defer(GUI_RowBegin((c), (n)), GUI_RowEnd((c)))
 #define GUI_Column(c, n)                                                       \
@@ -154,6 +159,7 @@ UiSignal GUI_ColumnEnd(UiContext *ctx);
 /* UI DATA MACROS */
 
 #define GUI_Hovering(s) !!((s).f & UiSignalFlags_Hovering)
+#define GUI_Clicked(s) !!((s).f & UiSignalFlags_Clicked)
 
 #define GUI_UiSize(k, v, s)                                                    \
   (UiSize) { .kind = (k), .value = (v), .strictness = (s), }

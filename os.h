@@ -69,6 +69,11 @@ typedef enum {
   OS_KeyCode_backSlash = '\\',
   OS_KeyCode_return = '\n',
   OS_KeyCode_delete = '\177', /* 127 */
+  OS_KeyCode_mouseLeft = 128,
+  OS_KeyCode_mouseMiddle = 129,
+  OS_KeyCode_mouseRight = 130,
+  OS_KeyCode_mouseScrollUp = 131,
+  OS_KeyCode_mouseScrollDown = 132,
   OS_KeyCode_count = 256,
 } OS_KeyEvent_KeyCode;
 

@@ -93,9 +93,13 @@ Bool Ui_PointInRect(int32_t px, int32_t py, Rect r) {
 
 UiSignal UiSignalFromWidget(UiContext *ctx, UiWidget *w) {
   UiSignal s = {0};
+  s.w = w;
   if (Ui_PointInRect(ctx->mouse[UiAxis_X], ctx->mouse[UiAxis_Y],
                      w->screenRect)) {
     s.f |= UiSignalFlags_Hovering;
+    if (ctx->mouseClicked) {
+      s.f |= UiSignalFlags_Clicked;
+    }
   }
 
   return s;
@@ -122,7 +126,7 @@ void UpdateWidgetCache(UiContext *ctx, UiWidget *w);
   } while (false)
 
 void GUI_InitStacks(UiContext *ctx) {
-  InitStack(ctx->bgColorStack, NewColor(.bgra = 0xFF000000));
+  InitStack(ctx->bgColorStack, NewColor(.bgra = 0xFF181818));
   InitStack(ctx->contentColorStack, NewColor(.bgra = 0xFFFFFFFF));
 
   InitStack(ctx->widthStack, GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1));
@@ -146,6 +150,37 @@ UiContext *GUICreateContext() {
 void GUI_SetMousePos(UiContext *ctx, int32_t mouseX, int32_t mouseY) {
   ctx->mouse[UiAxis_X] = mouseX;
   ctx->mouse[UiAxis_Y] = mouseY;
+}
+
+void GUI_HandleEvents(UiContext *ctx, OS_Event *events, int32_t count) {
+  ctx->mouseClicked = false;
+
+  for (int i = 0; i < count; i++) {
+    OS_Event e = events[i];
+    switch (e.kind) {
+    case OS_EventKind_MouseMove: {
+      GUI_SetMousePos(ctx, e.mouseMove.x, e.mouseMove.y);
+    } break;
+    case OS_EventKind_WindowResize: {
+      ctx->maxSize[UiAxis_X] = e.resize.width;
+      ctx->maxSize[UiAxis_Y] = e.resize.height;
+    } break;
+    case OS_EventKind_KeyUp: {
+      switch (e.key.keyCode) {
+      case OS_KeyCode_mouseLeft:
+        ctx->mouseClicked = true;
+        break;
+
+      default:
+        break;
+      }
+    } break;
+
+    case OS_EventKind_KeyDown:
+    case OS_EventKind_Quit:
+      break;
+    }
+  }
 }
 
 void GUIBegin(UiContext *ctx) {
@@ -395,28 +430,33 @@ void UpdateWidgetCache(UiContext *ctx, UiWidget *w) {
 
 void PushBgColor(UiContext *ctx, Color c) {
   ColorStack *e = AllocMemory(sizeof(ColorStack));
+  e->data = c;
   StackPush(ctx->bgColorStack, e);
 }
 void PopBgColor(UiContext *ctx) { StackPop(ctx->bgColorStack); }
 void PushContentColor(UiContext *ctx, Color c) {
   ColorStack *e = AllocMemory(sizeof(ColorStack));
+  e->data = c;
   StackPush(ctx->contentColorStack, e);
 }
 void PopContentColor(UiContext *ctx) { StackPop(ctx->contentColorStack); }
 
 void PushWidth(UiContext *ctx, UiSize s) {
   UiSizeStack *e = AllocMemory(sizeof(UiSizeStack));
+  e->data = s;
   StackPush(ctx->widthStack, e);
 }
 void PopWidth(UiContext *ctx) { StackPop(ctx->widthStack); }
 void PushHeight(UiContext *ctx, UiSize s) {
   UiSizeStack *e = AllocMemory(sizeof(UiSizeStack));
+  e->data = s;
   StackPush(ctx->heightStack, e);
 }
 void PopHeight(UiContext *ctx) { StackPop(ctx->heightStack); }
 
 void PushLayoutAxis(UiContext *ctx, UiAxis a) {
   UiAxisStack *e = AllocMemory(sizeof(UiAxisStack));
+  e->data = a;
   StackPush(ctx->layoutStack, e);
 }
 void PopLayoutAxis(UiContext *ctx) { StackPop(ctx->layoutStack); }

@@ -88,6 +88,25 @@ void OS_PollEvents(OS_Window *w, OS_Event **_events, int32_t *count) {
       };
     } break;
 
+    case RGFW_mouseButtonPressed: {
+      e = (OS_Event){
+          .kind = OS_EventKind_KeyDown,
+          .key =
+              {
+                  .keyCode = OS_KeyCode_mouseLeft + event->button,
+              },
+      };
+    } break;
+    case RGFW_mouseButtonReleased: {
+      e = (OS_Event){
+          .kind = OS_EventKind_KeyUp,
+          .key =
+              {
+                  .keyCode = OS_KeyCode_mouseLeft + event->button,
+              },
+      };
+    } break;
+
     case RGFW_keyPressed:
       e = (OS_Event){
           .kind = OS_EventKind_KeyDown,
