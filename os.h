@@ -1,8 +1,16 @@
 #ifndef CORE_OS_H
 #define CORE_OS_H
-#include "common.h"
 
-typedef struct OS_WINDOW OS_Window;
+#include "arena.h"
+#include "common.h"
+#include "string.h"
+#include "thirdparty/RGFW.h"
+
+typedef struct OS_WINDOW {
+  RGFW_window *w;
+  Bitmap frameBitmap;
+} OS_Window;
+
 typedef enum {
   /** EventKind_KeyDown events goes in the 'key' property */
   OS_EventKind_KeyDown,
@@ -108,11 +116,16 @@ void OS_DrawPixel(OS_Window *w, int32_t pixel, Color c);
 void OS_DrawRect(OS_Window *w, Rect r, Color c);
 void OS_DrawBitmap(OS_Window *w, Bitmap src, V2 pos);
 void OS_DrawBitmapRotated(OS_Window *w, Bitmap src, V2 pos, double angle);
+void OS_DrawText(OS_Window *w, String s, V2 pos, Color c);
 
 void OS_PollEvents(OS_Window *w, OS_Event **_events, int32_t *count);
+
+Bool OS_LoadFont(char *fontPath, int32_t fontSize);
+int32_t OS_TextWidth(char *str, int32_t len);
 
 #endif // !CORE_OS_H
 
 #ifdef CORE_OS_IMPLEMENTATION
+#include "os/text.c"
 #include "os/window.c"
 #endif // CORE_OS_IMPLEMENTATION

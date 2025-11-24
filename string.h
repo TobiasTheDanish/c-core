@@ -27,18 +27,14 @@ String StringConcat(String s, String o);
 }
 #endif // __cplusplus
 
-#define STRING_IMPLEMENTATION
 #ifdef STRING_IMPLEMENTATION
-#ifndef IMPLEMENTATION_GUARD
-#define IMPLEMENTATION_GUARD
+#ifndef STRING_IMPLEMENTATION_GUARD
+#define STRING_IMPLEMENTATION_GUARD
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-#ifndef ALLOCATOR_IMPLEMENTATION
-#define ALLOCATOR_IMPLEMENTATION
-#endif
 #include "allocator.h"
 
 #define __Alloc(b) AllocMemory(b)
@@ -146,8 +142,9 @@ String StringConcat(String s, String o) {
   return s;
 }
 
+#endif // !STRING_IMPLEMENTATION_GUARD
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-#endif // !IMPLEMENTATION_GUARD
 #endif // STRING_IMPLEMENTATION

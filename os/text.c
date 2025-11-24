@@ -1,9 +1,11 @@
-#include <freetype2/freetype/fttypes.h>
+#ifndef CORE_TEXT_C
+#define CORE_TEXT_C
+
 #define ALLOCATOR_IMPLEMENTATION
 #include "../allocator.h"
-#define CORE_OS_IMPLEMENTATION
+#include "../common.h"
 #include "../os.h"
-#include <stdint.h>
+#include "../string.h"
 
 typedef struct {
   V2 size;
@@ -14,7 +16,6 @@ typedef struct {
 
 #ifdef __linux__
 #include <ft2build.h>
-#include <stdio.h>
 #include FT_FREETYPE_H
 #include <freetype2/freetype/ftimage.h>
 
@@ -23,8 +24,10 @@ const char *freeTypeError(FT_Error e);
 #define OS_CHAR_COUNT 128
 
 OS_Character *fontMap = 0;
+int32_t curFontSize = 0;
 
-Bool loadFont(char *fontPath, int32_t fontSize) {
+Bool OS_LoadFont(char *fontPath, int32_t fontSize) {
+  curFontSize = fontSize;
   if (fontMap != 0) {
     for (int i = 0; i < OS_CHAR_COUNT; i++) {
       FreeMemory(fontMap[i].buffer);
@@ -84,7 +87,47 @@ Bool loadFont(char *fontPath, int32_t fontSize) {
   return true;
 }
 
-int32_t textWidth(char *str, int32_t len) {
+void __drawCharacter(OS_Window *w, OS_Character c, float x, float y,
+                     Color color) {
+  V2 pos = {
+      .x = x + c.bearing.x,
+      .y = y - c.bearing.y,
+  };
+
+  uint8_t bpp = 4;
+  int32_t charArea = c.size.x * c.size.y;
+  Bitmap b = {
+      .width = c.size.x,
+      .height = c.size.y,
+      .bpp = bpp,
+      .data = AllocMemory(charArea * bpp),
+  };
+
+  for (int32_t i = 0; i < charArea; i++) {
+    int32_t bitmapIdx = i * bpp;
+
+    b.data[bitmapIdx + 0] = color.r;
+    b.data[bitmapIdx + 1] = color.g;
+    b.data[bitmapIdx + 2] = color.b;
+    b.data[bitmapIdx + 3] = c.buffer[i];
+  }
+
+  OS_DrawBitmap(w, b, pos);
+  FreeMemory(b.data);
+}
+
+// RENDER TEXT USING OS_Window *, char *, color
+void OS_DrawText(OS_Window *w, String s, V2 pos, Color color) {
+  int32_t len = StringLength(s);
+  for (char *c = s; c < s + len; c++) {
+    OS_Character ch = fontMap[*c];
+
+    __drawCharacter(w, ch, pos.x, pos.y, color);
+    pos.x += (ch.advance >> 6);
+  }
+}
+
+int32_t OS_TextWidth(char *str, int32_t len) {
   int32_t w = 0;
 
   for (int i = 0; i < len; i++) {
@@ -228,3 +271,4 @@ const char *freeTypeError(FT_Error e) {
 }
 
 #endif /* ifdef __linux__ */
+#endif /* ifndef CORE_TEXT_C */

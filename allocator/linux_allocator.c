@@ -27,7 +27,7 @@ int32_t __len_list[MB] = {0};
 void *__AllocMemory(int32_t bytes) {
   void *res = mmap(0, bytes, PROT_READ | PROT_WRITE,
                    MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-  if ((intptr_t)res == -1) {
+  if (res == (void *)-1) {
     printf("Error allocating memory. Errno: %d\n", errno);
     abort();
   }
@@ -41,7 +41,9 @@ void *__AllocMemoryPage() { return __AllocMemory(__GetPageSize()); }
 
 void *__ReallocMemory(void *orig, int32_t bytes) {
   void *dest = __AllocMemory(bytes);
-  memcpy(dest, orig, bytes);
+  if (orig) {
+    memcpy(dest, orig, bytes);
+  }
   return dest;
 }
 

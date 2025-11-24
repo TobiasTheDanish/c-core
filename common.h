@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 typedef uint8_t Bool;
-#define true 1
-#define false 0
+#define true ((Bool)1)
+#define false ((Bool)0)
 
 typedef union {
   struct {

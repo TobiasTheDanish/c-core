@@ -1,6 +1,8 @@
+#ifndef CORE_STRING_C
+#define CORE_STRING_C
+
 #include <stdio.h>
 #define ARENA_IMPLEMENTATION
-#define STRING_IMPLEMENTATION
 #include "../string.h"
 #define TEST_IMPLEMENTATION
 #include "../testing.h"
@@ -43,3 +45,5 @@ int main() {
 
   printf("SUCCESS\n");
 }
+
+#endif /* ifndef CORE_STRING_C */

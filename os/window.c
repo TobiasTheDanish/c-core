@@ -1,10 +1,8 @@
 #ifndef CORE_OS_WINDOW_C
 #define CORE_OS_WINDOW_C
+#include "../allocator.h"
 #include "../os.h"
 #include <math.h>
-
-#define ALLOCATOR_IMPLEMENTATION
-#include "../allocator.h"
 
 #ifndef __APPLE__
 #include <GL/gl.h>
@@ -18,10 +16,7 @@
 #define RGFW_OPENGL
 #include "../thirdparty/RGFW.h"
 
-typedef struct OS_WINDOW {
-  RGFW_window *w;
-  Bitmap frameBitmap;
-} OS_Window;
+Arena staticArena = {0};
 
 void __AllocBitmap(Bitmap *b, int32_t width, int32_t height) {
   b->bpp = 4;
@@ -151,6 +146,7 @@ void OS_BlitWindow(OS_Window *w) {
   OPENGL_RenderBitmap(w->frameBitmap);
 
   RGFW_window_swapBuffers(w->w);
+  ZeroMemory(w->frameBitmap.data);
 }
 
 void OS_DrawPixel(OS_Window *w, int32_t pixel, Color c) {
@@ -189,14 +185,14 @@ void OS_DrawBitmapRotated(OS_Window *w, Bitmap src, V2 pos, double angle) {
   float cosAng = cos(angle);
   float sinAng = sin(angle);
 
-  int32_t startX = fmax(pos.x - src.width * 0.5, 0);
-  int32_t startY = fmax(pos.y - src.height * 0.5, 0);
+  int32_t startX = fmax(pos.x, 0);
+  int32_t startY = fmax(pos.y, 0);
 
   int32_t cx = pos.x;
   int32_t cy = pos.y;
 
-  int32_t targetX = fmin(pos.x + src.width * 0.5, w->frameBitmap.width);
-  int32_t targetY = fmin(pos.y + src.height * 0.5, w->frameBitmap.height);
+  int32_t targetX = fmin(pos.x + src.width, w->frameBitmap.width);
+  int32_t targetY = fmin(pos.y + src.height, w->frameBitmap.height);
 
   int32_t maxPixel =
       w->frameBitmap.width * w->frameBitmap.height * w->frameBitmap.bpp;
