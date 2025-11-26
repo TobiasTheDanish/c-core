@@ -43,6 +43,11 @@ typedef union {
   };
 } Rect;
 
+typedef struct {
+  float width;
+  float height;
+} CORE_Dimensions;
+
 #define CORE_Defer(pre, post)                                                  \
   for (int __i__ = ((pre), 0); !__i__; __i__ += 1, (post))
 // for(int _i_ = ((begin), 0); !_i_; _i_ += 1, (end))

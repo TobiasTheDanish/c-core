@@ -1,6 +1,7 @@
 #ifndef CORE_TEXT_C
 #define CORE_TEXT_C
 
+#include <float.h>
 #define CORE_ALLOCATOR_IMPLEMENTATION
 #include "../allocator.h"
 #include "../common.h"
@@ -128,14 +129,28 @@ void OS_DrawText(OS_Window *w, String s, V2 pos, Color color) {
 }
 
 int32_t OS_TextWidth(char *str, int32_t len) {
-  int32_t w = 0;
+  return OS_TextDimensions(str, len).width;
+}
+
+/* Text height is measured from the baseline */
+int32_t OS_TextHeight(char *str, int32_t len) {
+  return OS_TextDimensions(str, len).height;
+}
+
+/* Text height is measured from the baseline */
+CORE_Dimensions OS_TextDimensions(char *str, int32_t len) {
+  CORE_Dimensions dim = {
+      .width = 0,
+      .height = FLT_MIN,
+  };
 
   for (int i = 0; i < len; i++) {
     OS_Character c = fontMap[str[i]];
-    w += (c.advance >> 6);
+    dim.width += (c.advance >> 6);
+    dim.height = dim.height >= c.bearing.y ? dim.height : c.bearing.y;
   }
 
-  return w;
+  return dim;
 }
 
 const char *freeTypeError(FT_Error e) {

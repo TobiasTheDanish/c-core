@@ -122,6 +122,8 @@ void OS_PollEvents(OS_Window *w, OS_Event **_events, int32_t *count);
 
 Bool OS_LoadFont(char *fontPath, int32_t fontSize);
 int32_t OS_TextWidth(char *str, int32_t len);
+int32_t OS_TextHeight(char *str, int32_t len);
+CORE_Dimensions OS_TextDimensions(char *str, int32_t len);
 
 #endif // !CORE_OS_H
 

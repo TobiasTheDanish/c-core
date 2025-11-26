@@ -1,9 +1,8 @@
 #include "../gui.h"
 
-/** The String passed through 'name' param is freed in this function */
 UiWidget *GUI_RowBegin(UiContext *ctx, String name) {
   PushLayoutAxis(ctx, UiAxis_X);
-  UiWidget *w = UiWidgetFromString(ctx, name);
+  UiWidget *w = UiWidgetFromString(ctx, name, UiWidgetFlag_None);
   PopLayoutAxis(ctx);
 
   PushParentWidget(ctx, w);
@@ -16,10 +15,9 @@ UiSignal GUI_RowEnd(UiContext *ctx) {
   return UiSignalFromWidget(ctx, w);
 }
 
-/** The String passed through 'name' param is freed in this function */
 UiWidget *GUI_ColumnBegin(UiContext *ctx, String name) {
   PushLayoutAxis(ctx, UiAxis_Y);
-  UiWidget *w = UiWidgetFromString(ctx, name);
+  UiWidget *w = UiWidgetFromString(ctx, name, UiWidgetFlag_None);
   PopLayoutAxis(ctx);
 
   PushParentWidget(ctx, w);
@@ -32,8 +30,21 @@ UiSignal GUI_ColumnEnd(UiContext *ctx) {
   return UiSignalFromWidget(ctx, w);
 }
 
-/** The String passed through 'name' param is freed in this function */
 UiSignal GUI_Box(UiContext *ctx, String name) {
-  UiWidget *w = UiWidgetFromString(ctx, name);
+  UiWidget *w = UiWidgetFromString(ctx, name, UiWidgetFlag_None);
+  return UiSignalFromWidget(ctx, w);
+}
+
+void GUI_Spacer(UiContext *ctx, String key) {
+  UiWidgetFromString(ctx, key, UiWidgetFlag_NoRender);
+}
+
+UiSignal GUI_Button(UiContext *ctx, String text) {
+  UiWidget *w = UiWidgetFromString(ctx, text, UiWidgetFlag_RenderText);
+  return UiSignalFromWidget(ctx, w);
+}
+
+UiSignal GUI_Text(UiContext *ctx, String text) {
+  UiWidget *w = UiWidgetFromString(ctx, text, UiWidgetFlag_RenderText);
   return UiSignalFromWidget(ctx, w);
 }

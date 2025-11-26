@@ -19,6 +19,7 @@ typedef struct {
   int32_t mouseY;
 
   uint8_t activeElement;
+  Bool showText;
 } State;
 
 void handleEvent(OS_Event e, State *s) {
@@ -49,8 +50,10 @@ int main() {
       .windowWidth = 1080,
       .windowHeight = 720,
       .quit = 0,
+      .showText = 0,
   };
   OS_Window *w = OS_CreateWindow(state.windowWidth, state.windowHeight);
+  OS_LoadFont("/home/tobias/dev/c-core/fonts/UniversCondensed.ttf", 48);
 
   UiContext *ctx = GUICreateContext();
 
@@ -65,10 +68,6 @@ int main() {
       handleEvent(e, &state);
     }
     FreeMemory(events);
-
-    // GUI_SetMousePos(ctx, state.mouseX, state.mouseY);
-    // ctx->maxSize[UiAxis_X] = state.windowWidth;
-    // ctx->maxSize[UiAxis_Y] = state.windowHeight;
 
     GUIBegin(ctx);
 
@@ -106,19 +105,9 @@ int main() {
         }
       }
 
-      GUI_Width(ctx, GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 0)) GUI_Height(
-          ctx, GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1))
-          GUI_BgColor(ctx, NewColor(.bgra = state.activeElement == ElementBox2
-                                                ? activeColor
-                                                : 0xFFAAAAAA)) {
-        UiSignal s = GUI_Box(ctx, StringFromCString("box2"));
-        if (GUI_Hovering(s)) {
-          s.w->data.bg = NewColor(.bgra = 0xFF555555);
-        }
-        if (GUI_Clicked(s)) {
-          printf("box2 clicked\n");
-          state.activeElement = ElementBox2;
-        }
+      GUI_Width(ctx, GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 0))
+          GUI_Height(ctx, GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1)) {
+        GUI_Spacer(ctx, StringFromCString("row2spacer"));
       }
 
       GUI_Width(ctx, GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 15, 1)) GUI_Height(
@@ -141,14 +130,43 @@ int main() {
         GUI_Height(ctx, GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 25, 1))
             GUI_BgColor(ctx, NewColor(.bgra = state.activeElement == ElementRow3
                                                   ? activeColor
-                                                  : 0xFF00FF00)) {
-      UiSignal s = GUI_Box(ctx, StringFromCString("row3"));
-      if (GUI_Hovering(s)) {
-        s.w->data.bg = NewColor(.bgra = 0xFF00AA00);
+                                                  : 0xFF00FF00))
+                GUI_Row(ctx, StringFromCString("row3")) {
+
+      GUI_Width(ctx, GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 0))
+          GUI_Height(ctx, GUI_UiSize(UiSizeKind_PERCENTOFPARENT, 100, 1))
+              GUI_BgColor(ctx, NewColor(.bgra = 0xFFFFFFFF))
+                  GUI_ContentColor(ctx, NewColor(.bgra = 0xFF181818))
+                      GUI_Row(ctx, StringFromCString("row3_text_container")) {
+        String text = StringFromCString("Hello world");
+        if (state.showText) {
+          CORE_Dimensions textDim = OS_TextDimensions(text, StringLength(text));
+          GUI_Width(ctx, GUI_UiSize(UiSizeKind_TEXT, textDim.width, 1))
+              GUI_Height(ctx, GUI_UiSize(UiSizeKind_TEXT, textDim.height, 1))
+                  GUI_BgColor(ctx, NewColor(.bgra = 0xFF040506))
+                      GUI_ContentColor(ctx, NewColor(.bgra = 0xFFF8F8F8))
+                          GUI_Text(ctx, text);
+        }
       }
-      if (GUI_Clicked(s)) {
-        printf("row3 clicked\n");
-        state.activeElement = ElementRow3;
+
+      String buttonText = StringFromCString("Press me");
+      CORE_Dimensions textDim =
+          OS_TextDimensions(buttonText, StringLength(buttonText));
+      GUI_Width(ctx, GUI_UiSize(UiSizeKind_TEXT, textDim.width, 1))
+          GUI_Height(ctx, GUI_UiSize(UiSizeKind_TEXT, textDim.height, 1))
+              GUI_BgColor(ctx, NewColor(.bgra = 0xFFAAAAAA))
+                  GUI_ContentColor(ctx, NewColor(.bgra = 0xFF181818)) {
+
+        UiSignal s = GUI_Button(ctx, buttonText);
+        if (GUI_Hovering(s)) {
+          s.w->data.bg = NewColor(.bgra = 0xFFDDDDDD);
+        }
+        if (GUI_Clicked(s)) {
+          s.w->data.bg = NewColor(.bgra = 0xFFBDBDBD);
+          state.showText = !state.showText;
+
+          printf("button clicked. showText: %d\n", state.showText);
+        }
       }
     }
 

@@ -60,10 +60,8 @@ UiKey UiWidgetSeedKey(UiWidget *p) {
 
 UiKey UiActiveSeedKey(UiContext *ctx) { return UiWidgetSeedKey(ctx->root); }
 
-/** The String passed through 's' param is freed in this function */
-UiWidget *UiWidgetFromString(UiContext *ctx, String s) {
+UiWidget *UiWidgetFromString(UiContext *ctx, String s, UiWidgetFlags flags) {
   UiKey key = UiKeyFromString(UiActiveSeedKey(ctx), s);
-  StringFree(s);
   UiWidget *w = UiWidgetFromKey(ctx, key);
   Bool firstFrame = w == 0;
 
@@ -72,11 +70,13 @@ UiWidget *UiWidgetFromString(UiContext *ctx, String s) {
   }
 
   w->key = key;
+  w->flags = flags;
   w->parent = w->prevSibling = w->nextSibling = w->right = w->rightMost = 0;
 
   w->sizes[UiAxis_X] = ctx->widthStack->data;
   w->sizes[UiAxis_Y] = ctx->heightStack->data;
 
+  w->data.text = s;
   w->data.layoutAxis = ctx->layoutStack->data;
   w->data.bg = ctx->bgColorStack->data;
   w->data.content = ctx->contentColorStack->data;
@@ -383,10 +383,20 @@ void RenderWidget(UiWidget *w, OS_Window *win) {
   Color c = w->data.bg;
 
   OS_DrawRect(win, w->screenRect, c);
+
+  if (ShouldRenderText(w)) {
+    V2 pos = {
+        .x = w->screenRect.x,
+        .y = w->screenRect.y + w->screenRect.h,
+    };
+    OS_DrawText(win, w->data.text, pos, w->data.content);
+  }
 }
 
 void RenderWidgetTree(UiWidget *w, OS_Window *win) {
-  RenderWidget(w, win);
+  if (ShouldRenderWidget(w)) {
+    RenderWidget(w, win);
+  }
 
   ForEachChild(child, w) { RenderWidgetTree(child, win); }
 }

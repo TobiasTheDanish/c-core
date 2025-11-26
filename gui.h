@@ -17,9 +17,13 @@ typedef struct {
 } UiKey;
 
 typedef enum {
-  UiWidgetFlag_Container = (1 << 0),
-  UiWidgetFlag_DisplayText = (1 << 1),
+  UiWidgetFlag_None = (0 << 0),
+  UiWidgetFlag_NoRender = (1 << 0),
+  UiWidgetFlag_RenderText = (1 << 1),
 } UiWidgetFlags;
+
+#define ShouldRenderWidget(w) ((Bool)((w)->flags & UiWidgetFlag_NoRender) == 0)
+#define ShouldRenderText(w) ((Bool)((w)->flags & UiWidgetFlag_RenderText))
 
 typedef enum {
   UiAxis_X = 0,
@@ -61,6 +65,7 @@ typedef struct UI_WIDGET {
   struct UI_WIDGET *hash_prev;
 
   UiKey key;
+  UiWidgetFlags flags;
 
   UiSize sizes[UiAxis_COUNT];
 
@@ -111,7 +116,7 @@ UiContext *GUICreateContext();
 void GUI_HandleEvents(UiContext *ctx, OS_Event *events, int32_t count);
 void GUI_SetMousePos(UiContext *ctx, int32_t mouseX, int32_t mouseY);
 
-UiWidget *UiWidgetFromString(UiContext *ctx, String s);
+UiWidget *UiWidgetFromString(UiContext *ctx, String s, UiWidgetFlags flags);
 UiSignal UiSignalFromWidget(UiContext *ctx, UiWidget *w);
 
 void GUIBegin(UiContext *ctx);

@@ -83,7 +83,7 @@ String StringFromCStringL(char *s, int32_t len) {
   return m;
 }
 
-void StringFree(String s) { __Free(s); }
+void StringFree(String s) { __Free(_StringMeta(s)); }
 
 int32_t StringLength(String s) {
   StringMeta *m = _StringMeta(s);
