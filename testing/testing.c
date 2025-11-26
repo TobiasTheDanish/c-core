@@ -1,6 +1,6 @@
-#ifndef ALLOCATOR_IMPLEMENTATION
-#define ALLOCATOR_IMPLEMENTATION
-#endif /* ifndef ALLOCATOR_IMPLEMENTATION */
+#ifndef CORE_ALLOCATOR_IMPLEMENTATION
+#define CORE_ALLOCATOR_IMPLEMENTATION
+#endif /* ifndef CORE_ALLOCATOR_IMPLEMENTATION */
 #include "../allocator.h"
 #include "platform_testing.h"
 #include <stdio.h>

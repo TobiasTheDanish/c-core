@@ -1,3 +1,4 @@
+#include "../allocator.h"
 #include "../gui.h"
 #include "../os.h"
 #include <assert.h>

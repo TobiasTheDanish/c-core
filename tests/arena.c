@@ -1,7 +1,5 @@
-#define ARENA_IMPLEMENTATION
-#define TEST_IMPLEMENTATION
-#include "../arena.h"
-#include "../testing.h"
+#define CORE_IMPLEMENTATION
+#include "../core.h"
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>

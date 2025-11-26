@@ -178,10 +178,10 @@ UiSignal GUI_Box(UiContext *ctx, String name);
   }
 #define GUI_TextBgColor(w) (w).data.text.bg
 
-#ifdef GUI_IMPLEMENTATION
+#ifdef CORE_GUI_IMPLEMENTATION
 
 #include "gui/gui_core.c"
 #include "gui/gui_widget.c"
 
-#endif // GUI_IMPLEMENTATION
+#endif // CORE_GUI_IMPLEMENTATION
 #endif // !CORE_GUI_H

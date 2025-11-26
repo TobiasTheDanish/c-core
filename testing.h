@@ -2,7 +2,7 @@
 #define TESTING_H
 #include "common.h"
 
-#ifndef TEST_IMPLEMENTATION
+#ifndef CORE_TEST_IMPLEMENTATION
 
 #define assertNull(p)
 #define assertNotNull(p)
@@ -23,12 +23,12 @@
 #define assertNotEqualsPtr(actual, expected)
 #define assertNotEqualsChar(actual, expected)
 
-#endif // !TEST_IMPLEMENTATION
+#endif // !CORE_TEST_IMPLEMENTATION
 
-#ifdef TEST_IMPLEMENTATION
+#ifdef CORE_TEST_IMPLEMENTATION
 
 #include "testing/testing.c"
 
-#endif // TEST_IMPLEMENTATION
+#endif // CORE_TEST_IMPLEMENTATION
 
 #endif // !TESTING_H

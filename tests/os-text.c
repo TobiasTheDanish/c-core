@@ -1,10 +1,5 @@
-#define ALLOCATOR_IMPLEMENTATION
-#define STRING_IMPLEMENTATION
-#define ARENA_IMPLEMENTATION
-#define CORE_OS_IMPLEMENTATION
-#include "../os.h"
-#define TEST_IMPLEMENTATION
-#include "../testing.h"
+#define CORE_IMPLEMENTATION
+#include "../core.h"
 #include <stdio.h>
 
 int main() {

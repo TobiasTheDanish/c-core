@@ -8,7 +8,7 @@ void FreeMemory(void *mem);
 
 void ZeroMemory(void *ptr);
 
-#ifdef ALLOCATOR_IMPLEMENTATION
+#ifdef CORE_ALLOCATOR_IMPLEMENTATION
 
 #include "allocator/platform_allocator.h"
 #ifdef __unix__
@@ -33,6 +33,6 @@ void FreeMemory(void *mem) { __FreeMemory(mem); }
 void ZeroMemory(void *ptr) { __ZeroMemory(ptr); }
 
 // #endif // !IMPLEMENTATION_GUARD
-#endif // ALLOCATOR_IMPLEMENTATION
+#endif // CORE_ALLOCATOR_IMPLEMENTATION
 
 #endif // !CORE_ALLOCATOR_H

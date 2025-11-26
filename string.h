@@ -22,12 +22,12 @@ String StringAdd(String s, char c);
 String StringAddAll(String s, char *c);
 String StringConcat(String s, String o);
 
-#endif // !CORE_STRING_H
 #ifdef __cplusplus
 }
 #endif // __cplusplus
+#endif // !CORE_STRING_H
 
-#ifdef STRING_IMPLEMENTATION
+#ifdef CORE_STRING_IMPLEMENTATION
 #ifndef STRING_IMPLEMENTATION_GUARD
 #define STRING_IMPLEMENTATION_GUARD
 
@@ -142,9 +142,8 @@ String StringConcat(String s, String o) {
   return s;
 }
 
-#endif // !STRING_IMPLEMENTATION_GUARD
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus
+#endif // !STRING_IMPLEMENTATION_GUARD
 #endif // STRING_IMPLEMENTATION

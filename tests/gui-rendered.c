@@ -1,9 +1,6 @@
 #include <stdio.h>
-#define GUI_IMPLEMENTATION
-#define CORE_OS_IMPLEMENTATION
-#include "../common.h"
-#include "../gui.h"
-#include "../os.h"
+#define CORE_IMPLEMENTATION
+#include "../core.h"
 
 enum {
   ElementRow1 = 1,

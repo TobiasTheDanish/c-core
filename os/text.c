@@ -1,7 +1,7 @@
 #ifndef CORE_TEXT_C
 #define CORE_TEXT_C
 
-#define ALLOCATOR_IMPLEMENTATION
+#define CORE_ALLOCATOR_IMPLEMENTATION
 #include "../allocator.h"
 #include "../common.h"
 #include "../os.h"

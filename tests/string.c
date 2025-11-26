@@ -2,10 +2,8 @@
 #define CORE_STRING_C
 
 #include <stdio.h>
-#define ARENA_IMPLEMENTATION
-#include "../string.h"
-#define TEST_IMPLEMENTATION
-#include "../testing.h"
+#define CORE_IMPLEMENTATION
+#include "../core.h"
 
 int main() {
   String empty = StringEmpty();
