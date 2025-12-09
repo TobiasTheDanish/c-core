@@ -1,9 +1,26 @@
 #ifndef CORE_ALLOCATOR_IMPLEMENTATION
 #define CORE_ALLOCATOR_IMPLEMENTATION
+#include <string.h>
 #endif /* ifndef CORE_ALLOCATOR_IMPLEMENTATION */
 #include "../allocator.h"
 #include "platform_testing.h"
 #include <stdio.h>
+
+Bool _CompareStrings(char *a, char *b) {
+  uint64_t aLen = strlen(a);
+  uint64_t bLen = strlen(b);
+  if (aLen != bLen) {
+    return false;
+  }
+
+  for (int i = 0; a[i] && b[i]; i++) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 #ifdef __linux__
 #include "linux_testing.c"
@@ -57,6 +74,11 @@ void _assertEqualsChar(char actual, char expected, char *file, int line) {
   snprintf(__buf, 90, "Actual: %c. Expected: %c\n", actual, expected);
   _assert(actual == expected, __buf, file, line);
 }
+void _assertEqualsStr(char *actual, char *expected, char *file, int line) {
+  char __buf[150] = {0};
+  snprintf(__buf, 150, "Actual: %s. Expected: %s.\n", actual, expected);
+  _assert(_CompareStrings(actual, expected), __buf, file, line);
+}
 
 void _assertNotEqualsInt(int64_t actual, int64_t expected, char *file,
                          int line) {
@@ -91,6 +113,11 @@ void _assertNotEqualsChar(char actual, char expected, char *file, int line) {
   snprintf(__buf, 75, "Actual: %c. Expected: %c\n", actual, expected);
   _assert(actual != expected, __buf, file, line);
 }
+void _assertNotEqualsStr(char *actual, char *expected, char *file, int line) {
+  char __buf[150] = {0};
+  snprintf(__buf, 150, "Actual: %s. Expected: %s\n", actual, expected);
+  _assert(!_CompareStrings(actual, expected), __buf, file, line);
+}
 
 #define toString(v)                                                            \
   {                                                                            \
@@ -107,7 +134,7 @@ void _assertNotEqualsChar(char actual, char expected, char *file, int line) {
   }
 
 #define assertEqualsInt(actual, expected)                                      \
-  _assertEqualsInt(actual, expected, __FILE__, __LINE__)
+  _assertEqualsInt((actual), (expected), __FILE__, __LINE__)
 #define assertEqualsUint(actual, expected)                                     \
   _assertEqualsUint(actual, expected, __FILE__, __LINE__)
 #define assertEqualsFloat(actual, expected)                                    \
@@ -118,6 +145,8 @@ void _assertNotEqualsChar(char actual, char expected, char *file, int line) {
   _assertEqualsPtr(actual, expected, __FILE__, __LINE__)
 #define assertEqualsChar(actual, expected)                                     \
   _assertEqualsChar(actual, expected, __FILE__, __LINE__)
+#define assertEqualsStr(actual, expected)                                      \
+  _assertEqualsStr((actual), (expected), __FILE__, __LINE__)
 #define assertTrue(actual)                                                     \
   _assert((actual), "Expected true, but was false\n", __FILE__, __LINE__)
 
@@ -133,5 +162,8 @@ void _assertNotEqualsChar(char actual, char expected, char *file, int line) {
   _assertNotEqualsPtr(actual, expected, __FILE__, __LINE__)
 #define assertNotEqualsChar(actual, expected)                                  \
   _assertNotEqualsChar(actual, expected, __FILE__, __LINE__)
+#define assertNotEqualsStr(actual, expected)                                   \
+  _assertNotEqualsStr((actual), (expected), __FILE__, __LINE__)
+
 #define assertFalse(actual)                                                    \
   _assert(!(actual), "Expected false, but was true\n", __FILE__, __LINE__)

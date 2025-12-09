@@ -22,6 +22,11 @@ String StringAdd(String s, char c);
 String StringAddAll(String s, char *c);
 String StringConcat(String s, String o);
 
+String StringRepeatChar(char c, int32_t times);
+
+String StringFromInt(int32_t i);
+String StringFromFloat(float f);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
@@ -36,6 +41,8 @@ extern "C" {
 #endif // __cplusplus
 
 #include "allocator.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 #define __Alloc(b) AllocMemory(b)
 #define __Realloc(p, b) ReallocMemory((p), (b))
@@ -98,6 +105,7 @@ int32_t StringCap(String s) {
 
 String StringMaybeGrow(String s, int32_t addLen) {
   if (StringLength(s) + addLen >= StringCap(s)) {
+    int32_t curLen = StringLength(s);
     int32_t minCap = StringLength(s) + addLen;
     if (minCap < StringCap(s) * 2) {
       minCap = StringCap(s) * 2;
@@ -106,6 +114,7 @@ String StringMaybeGrow(String s, int32_t addLen) {
 
     s = m + sizeof(StringMeta);
     _StringMeta(s)->cap = minCap;
+    _StringMeta(s)->length = curLen;
   }
   return s;
 }
@@ -140,6 +149,49 @@ String StringConcat(String s, String o) {
     s[(_StringMeta(s)->length)++] = o[i];
   }
   return s;
+}
+
+String StringRepeatChar(char c, int32_t times) {
+  if (times <= 0) {
+    return StringEmpty();
+  }
+
+  String m = (String)__AllocString(times * 2);
+  m = m + sizeof(StringMeta);
+  _StringMeta(m)->length = 0;
+  _StringMeta(m)->cap = times * 2;
+
+  for (int32_t i = 0; i < times; i++) {
+    m[(_StringMeta(m)->length)++] = c;
+  }
+
+  return m;
+}
+
+String StringFromInt(int32_t i) {
+  int32_t len = snprintf(0, 0, "%d", i);
+
+  String m = (String)__AllocString(len * 2);
+  m = m + sizeof(StringMeta);
+  _StringMeta(m)->length = len;
+  _StringMeta(m)->cap = len * 2;
+
+  snprintf(m, len + 1, "%d", i);
+
+  return m;
+}
+
+String StringFromFloat(float i) {
+  int32_t len = snprintf(0, 0, "%f", i);
+
+  String m = (String)__AllocString(len * 2);
+  m = m + sizeof(StringMeta);
+  _StringMeta(m)->length = len;
+  _StringMeta(m)->cap = len * 2;
+
+  snprintf(m, len + 1, "%f", i);
+
+  return m;
 }
 
 #ifdef __cplusplus

@@ -15,6 +15,7 @@
 #define assertEqualsDouble(actual, expected)
 #define assertEqualsPtr(actual, expected)
 #define assertEqualsChar(actual, expected)
+#define assertEqualsStr(actual, expected)
 
 #define assertNotEqualsInt(actual, expected)
 #define assertNotEqualsUint(actual, expected)
@@ -22,6 +23,7 @@
 #define assertNotEqualsDouble(actual, expected)
 #define assertNotEqualsPtr(actual, expected)
 #define assertNotEqualsChar(actual, expected)
+#define assertNotEqualsStr(actual, expected)
 
 #endif // !CORE_TEST_IMPLEMENTATION
 

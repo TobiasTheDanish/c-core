@@ -1,6 +1,8 @@
 #ifndef UNIX_ALLOCATOR_C
 #define UNIX_ALLOCATOR_C
 
+#include "platform_allocator.h"
+
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -47,7 +49,8 @@ void *__AllocMemory(size_t bytes) {
 void *__AllocMemoryPage() { return __AllocMemory(__GetPageSize()); }
 
 void *__ReallocMemory(void *orig, size_t bytes) {
-  if (bytes == 0) {
+  if (bytes == 0 && orig != 0) {
+    __FreeMemory(orig);
     return 0;
   }
 
@@ -60,6 +63,8 @@ void *__ReallocMemory(void *orig, size_t bytes) {
     } else {
       memcpy(dest, orig, bytes);
     }
+
+    __FreeMemory(orig);
   }
   return dest;
 }
