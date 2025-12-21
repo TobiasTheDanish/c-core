@@ -13,6 +13,8 @@ String StringEmpty();
 String StringFromCString(char *s);
 String StringFromCStringL(char *s, int32_t len);
 
+/** Resets the length and reuses the memory of the string */
+String StringReset(String s);
 void StringFree(String s);
 
 int32_t StringLength(String s);
@@ -20,6 +22,8 @@ int32_t StringCap(String s);
 
 String StringAdd(String s, char c);
 String StringAddAll(String s, char *c);
+String StringAddChars(String s, char *c, int32_t count);
+String StringInsert(String s, int32_t index, char c);
 String StringConcat(String s, String o);
 
 String StringRepeatChar(char c, int32_t times);
@@ -90,6 +94,13 @@ String StringFromCStringL(char *s, int32_t len) {
   return m;
 }
 
+String StringReset(String s) {
+  if (s != 0) {
+    _StringMeta(s)->length = 0;
+  }
+  return s;
+}
+
 void StringFree(String s) { __Free(_StringMeta(s)); }
 
 int32_t StringLength(String s) {
@@ -131,13 +142,32 @@ String StringAddAll(String s, char *c) {
     return s;
   }
 
-  s = StringMaybeGrow(s, cLen);
+  return StringAddChars(s, c, cLen);
+}
 
-  for (int32_t i = 0; i < cLen; i++) {
+String StringAddChars(String s, char *c, int32_t count) {
+  s = StringMaybeGrow(s, count);
+
+  for (int32_t i = 0; i < count; i++) {
     s[(_StringMeta(s)->length)++] = c[i];
   }
   return s;
 }
+
+String StringInsert(String s, int32_t index, char c) {
+  s = StringMaybeGrow(s, 1);
+
+  int32_t len = _StringMeta(s)->length;
+  for (int32_t i = len; len >= index; i--) {
+    s[i + 1] = s[i];
+  }
+
+  s[index] = c;
+  _StringMeta(s)->length += 1;
+
+  return s;
+}
+
 String StringConcat(String s, String o) {
   int32_t oLen = StringLength(o);
   if (oLen == 0) {
