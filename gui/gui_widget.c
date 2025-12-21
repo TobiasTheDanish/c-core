@@ -48,3 +48,15 @@ UiSignal GUI_Text(UiContext *ctx, String text) {
   UiWidget *w = UiWidgetFromString(ctx, text, UiWidgetFlag_RenderText);
   return UiSignalFromWidget(ctx, w);
 }
+
+UiSignal GUI_TextEdit(UiContext *ctx, String *text) {
+  UiWidget *w = UiWidgetFromString(
+      ctx, *text, UiWidgetFlag_RenderText | UiWidgetFlag_TextEdit);
+  UiSignal s = UiSignalFromWidget(ctx, w);
+
+  if (w->data.isHot || w->data.isActive) {
+    *text = StringAddChars(*text, ctx->input, StringLength(ctx->input));
+  }
+
+  return s;
+}

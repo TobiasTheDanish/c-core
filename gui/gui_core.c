@@ -80,6 +80,7 @@ UiWidget *UiWidgetFromString(UiContext *ctx, String s, UiWidgetFlags flags) {
   w->data.layoutAxis = ctx->layoutStack->data;
   w->data.bg = ctx->bgColorStack->data;
   w->data.content = ctx->contentColorStack->data;
+  w->data.isHot = w == ctx->hot;
 
   if (ctx->root) {
     PushChildWidget(ctx, w);
@@ -100,8 +101,15 @@ UiSignal UiSignalFromWidget(UiContext *ctx, UiWidget *w) {
     s.f |= UiSignalFlags_Hovering;
     if (ctx->mouseClicked) {
       s.f |= UiSignalFlags_Clicked;
+
+      if (ctx->hot == 0) {
+        ctx->hot = w;
+        s.w->data.isHot = true;
+      }
     }
   }
+
+  w->data.isActive = ctx->active == w;
 
   return s;
 }
@@ -145,6 +153,8 @@ UiContext *GUICreateContext() {
 
   GUI_InitStacks(ctx);
 
+  ctx->input = StringEmpty();
+
   return ctx;
 }
 
@@ -155,6 +165,7 @@ void GUI_SetMousePos(UiContext *ctx, int32_t mouseX, int32_t mouseY) {
 
 void GUI_HandleEvents(UiContext *ctx, OS_Event *events, int32_t count) {
   ctx->mouseClicked = false;
+  ctx->input = StringReset(ctx->input);
 
   for (int i = 0; i < count; i++) {
     OS_Event e = events[i];
@@ -167,10 +178,18 @@ void GUI_HandleEvents(UiContext *ctx, OS_Event *events, int32_t count) {
       ctx->maxSize[UiAxis_Y] = e.resize.height;
     } break;
     case OS_EventKind_KeyUp: {
-      switch (e.key.keyCode) {
-      case OS_KeyCode_mouseLeft:
-        ctx->mouseClicked = true;
+      if (OS_KeyCode_space <= e.key.keyCode &&
+          e.key.keyCode < OS_KeyCode_delete) {
+        // Key is a printable ascii character
+        StringAdd(ctx->input, (char)e.key.keyCode);
         break;
+      }
+
+      switch (e.key.keyCode) {
+      case OS_KeyCode_mouseLeft: {
+        ctx->mouseClicked = true;
+        ctx->hot = 0;
+      } break;
 
       default:
         break;
@@ -185,6 +204,12 @@ void GUI_HandleEvents(UiContext *ctx, OS_Event *events, int32_t count) {
 }
 
 void GUIBegin(UiContext *ctx) {
+  if (ctx->hot) {
+    ctx->active = ctx->hot;
+    ctx->active->data.isHot = false;
+    ctx->hot = 0;
+  }
+
   String s = StringFromCString("root");
   UiKey key = UiKeyFromString(UiZeroKey(), s);
   StringFree(s);

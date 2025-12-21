@@ -20,10 +20,12 @@ typedef enum {
   UiWidgetFlag_None = (0 << 0),
   UiWidgetFlag_NoRender = (1 << 0),
   UiWidgetFlag_RenderText = (1 << 1),
+  UiWidgetFlag_TextEdit = (1 << 2),
 } UiWidgetFlags;
 
 #define ShouldRenderWidget(w) ((Bool)((w)->flags & UiWidgetFlag_NoRender) == 0)
 #define ShouldRenderText(w) ((Bool)((w)->flags & UiWidgetFlag_RenderText))
+#define WidgetIsTextEdit(w) ((Bool)((w)->flags & UiWidgetFlag_TextEdit))
 
 typedef enum {
   UiAxis_X = 0,
@@ -52,6 +54,8 @@ typedef struct {
   String text;
   Color bg;
   Color content;
+  Bool isHot;
+  Bool isActive;
 } UiWidgetData;
 
 typedef struct UI_WIDGET {
@@ -87,9 +91,13 @@ DefineStack(UiAxis);
 
 typedef struct {
   UiWidget *root;
+  UiWidget *hot;
+  UiWidget *active;
+
   float maxSize[UiAxis_COUNT];
   int32_t mouse[UiAxis_COUNT];
   Bool mouseClicked;
+  String input;
 
   uint64_t widgetTableSize;
   UiWidgetHashSlot *widgetTable;
@@ -156,6 +164,9 @@ UiSignal GUI_RowEnd(UiContext *ctx);
 UiWidget *GUI_ColumnBegin(UiContext *ctx, String name);
 UiSignal GUI_ColumnEnd(UiContext *ctx);
 UiSignal GUI_Box(UiContext *ctx, String name);
+UiSignal GUI_Button(UiContext *ctx, String text);
+UiSignal GUI_Text(UiContext *ctx, String text);
+UiSignal GUI_TextEdit(UiContext *ctx, String *text);
 
 #define GUI_Row(c, n) CORE_Defer(GUI_RowBegin((c), (n)), GUI_RowEnd((c)))
 #define GUI_Column(c, n)                                                       \
