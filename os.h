@@ -1,10 +1,30 @@
 #ifndef CORE_OS_H
 #define CORE_OS_H
 
-#include "arena.h"
 #include "common.h"
+#include "include/RGFW.h"
 #include "string.h"
-#include "thirdparty/RGFW.h"
+
+typedef enum {
+  OS_VertexShader = 0,
+  OS_FragmentShader,
+  OS_ShaderTypeCount,
+} OS_ShaderType;
+
+typedef struct {
+  OS_ShaderType type;
+  String source;
+} OS_ShaderSource;
+
+typedef uint32_t OS_ShaderProgram;
+typedef int32_t OS_ShaderAttribute;
+typedef int16_t OS_VertexIndex;
+typedef struct {
+  uint32_t texture;
+  int32_t width;
+  int32_t height;
+  uint8_t *data;
+} OS_Texture;
 
 typedef struct OS_WINDOW {
   RGFW_window *w;
@@ -125,9 +145,29 @@ int32_t OS_TextWidth(char *str, int32_t len);
 int32_t OS_TextHeight(char *str, int32_t len);
 CORE_Dimensions OS_TextDimensions(char *str, int32_t len);
 
+Bool OS_LoadShaderProgram(OS_ShaderProgram *program, OS_ShaderSource *sources,
+                          int32_t sourceCount);
+OS_ShaderAttribute OS_GetShaderAttribute(OS_ShaderProgram p, char *name);
+void OS_ActivateShader(OS_ShaderProgram p);
+OS_Texture OS_LoadTexture(OS_ShaderProgram p, int32_t width, int32_t height,
+                          uint8_t *data);
+void OS_UpdateTexture(OS_Texture *tex, int32_t width, int32_t height,
+                      uint8_t *data);
+void OS_SetShaderAttribute3f(OS_ShaderAttribute a, int32_t stride, void *data);
+void OS_SetShaderAttribute2f(OS_ShaderAttribute a, int32_t stride, void *data);
+void OS_SetUniformInt(OS_ShaderProgram p, char *name, int32_t value);
+void OS_SetUniformVec3(OS_ShaderProgram p, char *name, V3 value);
+void OS_SetUniformMat4f(OS_ShaderProgram p, char *name, M4f value);
+void OS_DrawIndices(OS_VertexIndex *indices, uint32_t count);
+
+void OS_RendererInit();
+void OS_RenderBegin(OS_Event *events, int32_t count);
+void OS_RenderEnd(OS_Window *w);
+
 #endif // !CORE_OS_H
 
 #ifdef CORE_OS_IMPLEMENTATION
+#include "os/renderer.c"
 #include "os/text.c"
 #include "os/window.c"
 #endif // CORE_OS_IMPLEMENTATION

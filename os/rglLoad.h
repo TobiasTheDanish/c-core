@@ -157,9 +157,12 @@ typedef ptrdiff_t GLsizeiptr;
   PROC(void, glClear, GLbitfield mask)                                         \
   PROC(void, glClearColor, GLfloat, GLfloat, GLfloat, GLfloat)                 \
   PROC(void, glUniform2f, GLint location, GLfloat v0, GLfloat v1)              \
+  PROC(void, glUniform3f, GLint location, GLfloat v0, GLfloat v1, GLfloat v2)  \
   PROC(void, glUniform4f, GLint location, GLfloat v0, GLfloat v1, GLfloat v2,  \
        GLfloat v3)                                                             \
-  PROC(void, glUniform1i, GLint location, GLint v0)
+  PROC(void, glUniform1i, GLint location, GLint v0)                            \
+  PROC(GLint, glGetAttribLocation, GLuint program, const GLchar *name)         \
+  PROC(void, glGenerateMipmap, GLenum target)
 
 typedef void (*gl_proc)(void);
 static inline gl_proc load_proc_or_die(const char *name, gl_proc *proc);
@@ -198,17 +201,20 @@ static inline gl_proc load_proc_or_die(const char *name, gl_proc *proc);
 #define glGenVertexArrays LAZY_LOAD_PROC(glGenVertexArrays)
 #define glGenBuffers LAZY_LOAD_PROC(glGenBuffers)
 #define glBindVertexArray LAZY_LOAD_PROC(glBindVertexArray)
-#define glGetUniformLocation LAZY_LOAD_PROC(glGetUniformLocation)
-#define glUniformMatrix4fv LAZY_LOAD_PROC(glUniformMatrix4fv)
 #define glTexImage2D LAZY_LOAD_PROC(glTexImage2D)
 #define glActiveTexture LAZY_LOAD_PROC(glActiveTexture)
 #define glDebugMessageCallback LAZY_LOAD_PROC(glDebugMessageCallback)
 #define glDrawElements LAZY_LOAD_PROC(glDrawElements)
 #define glClear LAZY_LOAD_PROC(glClear)
 #define glClearColor LAZY_LOAD_PROC(glClearColor)
+#define glGetAttribLocation LAZY_LOAD_PROC(glGetAttribLocation)
+#define glGetUniformLocation LAZY_LOAD_PROC(glGetUniformLocation)
+#define glUniformMatrix4fv LAZY_LOAD_PROC(glUniformMatrix4fv)
 #define glUniform2f LAZY_LOAD_PROC(glUniform2f)
+#define glUniform3f LAZY_LOAD_PROC(glUniform3f)
 #define glUniform4f LAZY_LOAD_PROC(glUniform4f)
 #define glUniform1i LAZY_LOAD_PROC(glUniform1i)
+#define glGenerateMipmap LAZY_LOAD_PROC(glGenerateMipmap)
 
 #define PROC(ret, name, ...) typedef ret (*name##PROC)(__VA_ARGS__);
 PROCS

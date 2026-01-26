@@ -15,6 +15,7 @@ String StringFromCStringL(char *s, int32_t len);
 
 /** Resets the length and reuses the memory of the string */
 String StringReset(String s);
+String StringCopy(String s);
 void StringFree(String s);
 
 int32_t StringLength(String s);
@@ -30,6 +31,20 @@ String StringRepeatChar(char c, int32_t times);
 
 String StringFromInt(int32_t i);
 String StringFromFloat(float f);
+
+Bool StringToFloat(String s, float *res);
+
+/** Returns index of the specified char, starting from index of pos. Returns -1
+ * if not found */
+int32_t StringFindChar(String s, char c, int32_t pos);
+String StringSubStr(String s, int32_t offset, int32_t end);
+Bool StringEqualsCStr(String s, char *cstr);
+Bool StringIsSpace(String s, int32_t idx);
+Bool StringIsAlpha(String s, int32_t idx);
+Bool StringIsNumeric(String s, int32_t idx);
+/** Returns true if the char of s at idx is equal to any of the chars in chars
+ */
+Bool StringIsAny(String s, int32_t idx, String chars);
 
 #ifdef __cplusplus
 }
@@ -99,6 +114,14 @@ String StringReset(String s) {
     _StringMeta(s)->length = 0;
   }
   return s;
+}
+
+String StringCopy(String s) {
+  if (!s || StringLength(s) == 0) {
+    return StringEmpty();
+  }
+
+  return StringFromCStringL(s, StringLength(s));
 }
 
 void StringFree(String s) { __Free(_StringMeta(s)); }
@@ -222,6 +245,126 @@ String StringFromFloat(float i) {
   snprintf(m, len + 1, "%f", i);
 
   return m;
+}
+
+Bool StringToFloat(String s, float *res) {
+  int32_t len = StringLength(s);
+
+  Bool isNegative = false;
+  Bool inDecimals = false;
+
+  uint32_t base = 0;
+  uint32_t decimal = 0;
+  uint32_t decimalExponent = 1;
+
+  *res = 0;
+  for (int32_t i = 0; i < len; i++) {
+    char c = s[i];
+    if ('0' <= c && c <= '9') {
+      if (inDecimals) {
+        decimal = decimal * 10 + (c - '0');
+        decimalExponent *= 10;
+      } else {
+        base = base * 10 + (c - '0');
+      }
+    } else if (c == '.') {
+      inDecimals = true;
+    } else if (i = 0 && c == '-') {
+      isNegative = true;
+    } else {
+      *res = 0;
+      return false;
+    }
+  }
+
+  float f = (float)base;
+  if (inDecimals) {
+    f += ((float)decimal) / decimalExponent;
+  }
+  if (isNegative) {
+    f = -f;
+  }
+  *res = f;
+
+  return true;
+}
+
+int32_t StringFindChar(String s, char c, int32_t pos) {
+  if (pos >= _StringMeta(s)->length) {
+    return -1;
+  }
+
+  for (int32_t i = pos; i < _StringMeta(s)->length; i++) {
+    if (s[i] == c) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+String StringSubStr(String s, int32_t offset, int32_t len) {
+  if (offset >= 0 && len > 0 && len > offset && len < StringLength(s)) {
+    return StringFromCStringL(s + offset, len - offset);
+  } else if (len <= 0 || offset - len == 0) {
+    return StringEmpty();
+  } else {
+    return StringFromCStringL(s + offset, StringLength(s) - offset);
+  }
+}
+
+Bool StringEqualsCStr(String s, char *cstr) {
+  int32_t cLen = CStringLength(cstr);
+  int32_t sLen = StringLength(s);
+  if (cLen != sLen) {
+    return false;
+  }
+
+  for (int32_t i = 0; i < sLen; i++) {
+    if (s[i] != cstr[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+Bool StringIsSpace(String s, int32_t idx) {
+  char c = s[idx];
+  switch (c) {
+  case ' ':
+  case '\n':
+  case '\r':
+  case '\t':
+  case '\v':
+  case '\f':
+    return true;
+
+  default:
+    return false;
+  }
+}
+
+Bool StringIsAlpha(String s, int32_t idx) {
+  char c = s[idx];
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
+Bool StringIsNumeric(String s, int32_t idx) {
+  char c = s[idx];
+  return '0' <= c && c <= '9';
+}
+
+Bool StringIsAny(String s, int32_t idx, String chars) {
+  int32_t charsLen = StringLength(chars);
+
+  char c = s[idx];
+  for (int32_t i = 0; i < charsLen; i++) {
+    if (c == chars[i]) {
+      return true;
+    }
+  }
+  return false;
 }
 
 #ifdef __cplusplus

@@ -1,3 +1,6 @@
+#ifndef OS_OPENGL_C
+#define OS_OPENGL_C
+
 #include "../common.h"
 #include <assert.h>
 #include <stdio.h>
@@ -11,7 +14,7 @@
 #include <OpenGL/gl.h>
 #endif
 
-const char *vert_shader_source =
+const char *bitmap_vert_shader_source =
     "#version 330\n"
     "precision mediump float;\n"
     "out vec2 uv;\n"
@@ -23,14 +26,14 @@ const char *vert_shader_source =
     "    gl_Position = vec4(pos.x, -pos.y, 0.0, 1.0);\n"
     "}\n";
 
-const char *frag_shader_source = "#version 330\n"
-                                 "precision mediump float;\n"
-                                 "uniform sampler2D tex;\n"
-                                 "in vec2 uv;\n"
-                                 "out vec4 out_color;\n"
-                                 "void main(void) {\n"
-                                 "    out_color = texture(tex, uv);\n"
-                                 "}\n";
+const char *bitmap_frag_shader_source = "#version 330\n"
+                                        "precision mediump float;\n"
+                                        "uniform sampler2D tex;\n"
+                                        "in vec2 uv;\n"
+                                        "out vec4 out_color;\n"
+                                        "void main(void) {\n"
+                                        "    out_color = texture(tex, uv);\n"
+                                        "}\n";
 
 const char *shader_type_as_cstr(GLuint shader) {
   switch (shader) {
@@ -115,10 +118,10 @@ void OPENGL_init() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   GLuint vert_shader;
-  assert(compile_shader_source(vert_shader_source, GL_VERTEX_SHADER,
+  assert(compile_shader_source(bitmap_vert_shader_source, GL_VERTEX_SHADER,
                                &vert_shader));
   GLuint frag_shader;
-  assert(compile_shader_source(frag_shader_source, GL_FRAGMENT_SHADER,
+  assert(compile_shader_source(bitmap_frag_shader_source, GL_FRAGMENT_SHADER,
                                &frag_shader));
   GLuint program;
   assert(link_program(vert_shader, frag_shader, &program));
@@ -139,3 +142,5 @@ void OPENGL_RenderBitmap(Bitmap b) {
 
   texture_copy(textureUnit);
 }
+
+#endif /* ifndef OS_OPENGL_C */

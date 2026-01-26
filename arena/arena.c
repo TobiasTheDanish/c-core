@@ -1,6 +1,5 @@
 #include "../arena.h"
-#define CORE_ALLOCATOR_IMPLEMENTATION
-#include "../allocator.h"
+#include "../allocator/platform_allocator.h"
 
 #include <stdint.h>
 #include <string.h>

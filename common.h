@@ -33,6 +33,34 @@ typedef struct V2 {
   float y;
 } V2;
 
+typedef struct V3 {
+  float x;
+  float y;
+  float z;
+} V3;
+
+typedef union M4x4f {
+  struct {
+    float _00; // col 0
+    float _10;
+    float _20;
+    float _30;
+    float _01; // col 1
+    float _11;
+    float _21;
+    float _31;
+    float _02; // col 2
+    float _12;
+    float _22;
+    float _32;
+    float _03; // col 3
+    float _13;
+    float _23;
+    float _33;
+  };
+  float values[16];
+} M4f;
+
 typedef union {
   V2 pos;
   struct {
