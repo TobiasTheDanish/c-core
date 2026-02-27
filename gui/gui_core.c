@@ -1,8 +1,6 @@
 #include "../allocator.h"
 #include "../gui.h"
 #include "../os.h"
-#include <assert.h>
-#include <stdint.h>
 
 #define ForEachChild(name, w)                                                  \
   for (UiWidget *name = (w)->right; name != 0; name = name->nextSibling)
@@ -60,8 +58,30 @@ UiKey UiWidgetSeedKey(UiWidget *p) {
 
 UiKey UiActiveSeedKey(UiContext *ctx) { return UiWidgetSeedKey(ctx->root); }
 
+String UiHashPartOfKeyString(String s) {
+  String res = s;
+  int32_t delimeterIdx = StringFindSeq(s, "###", 3, 0);
+  if (delimeterIdx != -1) {
+    res = StringSubStr(s, delimeterIdx + 3, StringLength(s));
+  }
+
+  return res;
+}
+
+String UiDisplayPartOfKeyString(String s) {
+  String res = s;
+  int32_t delimeterIdx = StringFindSeq(s, "###", 3, 0);
+  if (delimeterIdx != 1) {
+    res = StringSubStr(s, 0, delimeterIdx);
+  }
+
+  return res;
+}
+
 UiWidget *UiWidgetFromString(UiContext *ctx, String s, UiWidgetFlags flags) {
-  UiKey key = UiKeyFromString(UiActiveSeedKey(ctx), s);
+  String hashPart = UiHashPartOfKeyString(s);
+
+  UiKey key = UiKeyFromString(UiActiveSeedKey(ctx), hashPart);
   UiWidget *w = UiWidgetFromKey(ctx, key);
   Bool firstFrame = w == 0;
 
@@ -76,7 +96,7 @@ UiWidget *UiWidgetFromString(UiContext *ctx, String s, UiWidgetFlags flags) {
   w->sizes[UiAxis_X] = ctx->widthStack->data;
   w->sizes[UiAxis_Y] = ctx->heightStack->data;
 
-  w->data.text = s;
+  w->data.text = UiDisplayPartOfKeyString(s);
   w->data.layoutAxis = ctx->layoutStack->data;
   w->data.bg = ctx->bgColorStack->data;
   w->data.content = ctx->contentColorStack->data;

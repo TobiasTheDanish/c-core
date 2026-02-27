@@ -68,9 +68,20 @@ bool buildStaticLib(Cmd *cmd) {
     return false;
   }
 
+  cmd_append(cmd, CC);
+  cmd_append_cflags(cmd);
+  cmd_append(cmd, "-c", "path/path.c");
+  cmd_append(cmd, "-o", STATIC_FOLDER "/path.o");
+  cmd_append_lflags(cmd);
+
+  if (!cmd_run(cmd)) {
+    nob_log(NOB_ERROR, "[STATIC]: Failed to compile path.o\n");
+    return false;
+  }
+
   // Build static archive
   cmd_append(cmd, "ar", "rcs", STATIC_FOLDER "/libcore.a",
-             STATIC_FOLDER "/core.o",
+             STATIC_FOLDER "/core.o", STATIC_FOLDER "/path.o",
              "./thirdparty/RGFW-1.70_linux_amd64/lib/libRGFW.a");
   return cmd_run(cmd);
 }
@@ -88,6 +99,12 @@ bool buildTestCases(Cmd *cmd) {
 
   cmd_append(cmd, CC, "-o", TEST_FOLDER "/threadpool");
   cmd_append(cmd, "./tests/threadpool.c", "./threadpool/threadpool.c");
+  if (!cmd_run(cmd)) {
+    result = false;
+  }
+
+  cmd_append(cmd, CC, "-o", TEST_FOLDER "/gc");
+  cmd_append(cmd, "./tests/gc.c", "./gc/gc.c");
   if (!cmd_run(cmd)) {
     result = false;
   }

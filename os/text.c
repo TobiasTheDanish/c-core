@@ -2,6 +2,7 @@
 #define CORE_TEXT_C
 
 #include <float.h>
+#include <stdio.h>
 #define CORE_ALLOCATOR_IMPLEMENTATION
 #include "../allocator.h"
 #include "../common.h"
@@ -26,6 +27,8 @@ const char *freeTypeError(FT_Error e);
 
 OS_Character *fontMap = 0;
 int32_t curFontSize = 0;
+int32_t lineHeight = 0;
+int32_t baselineOffset = 0;
 
 Bool OS_LoadFont(char *fontPath, int32_t fontSize) {
   curFontSize = fontSize;
@@ -58,6 +61,8 @@ Bool OS_LoadFont(char *fontPath, int32_t fontSize) {
     return false;
   }
 
+  lineHeight = INT32_MIN;
+  baselineOffset = INT32_MIN;
   for (uint8_t c = 0; c < OS_CHAR_COUNT; c++) {
     if (FT_Load_Char(fontFace, c, FT_LOAD_RENDER)) {
       printf("Could not load char %c(%d)\n", c, c);
@@ -75,12 +80,22 @@ Bool OS_LoadFont(char *fontPath, int32_t fontSize) {
             AllocMemory(charBitmap.width * charBitmap.rows * sizeof(uint8_t)),
     };
 
+    if (osChar.size.y >= lineHeight) {
+      lineHeight = osChar.size.y;
+    }
+    int32_t offset = osChar.size.y - osChar.bearing.y;
+    if (offset >= baselineOffset) {
+      baselineOffset = offset;
+    }
+
     for (uint64_t i = 0; i < charBitmap.width * charBitmap.rows; i++) {
       osChar.buffer[i] = charBitmap.buffer[i];
     }
 
     fontMap[c] = osChar;
   }
+
+  printf("lineHeight: %d, baselineOffset: %d\n", lineHeight, baselineOffset);
 
   FT_Done_Face(fontFace);
   FT_Done_FreeType(ft);
@@ -92,7 +107,7 @@ void __drawCharacter(OS_Window *w, OS_Character c, float x, float y,
                      Color color) {
   V2 pos = {
       .x = x + c.bearing.x,
-      .y = y - c.bearing.y,
+      .y = y - (c.bearing.y + baselineOffset),
   };
 
   uint8_t bpp = 4;
@@ -141,13 +156,13 @@ int32_t OS_TextHeight(char *str, int32_t len) {
 CORE_Dimensions OS_TextDimensions(char *str, int32_t len) {
   CORE_Dimensions dim = {
       .width = 0,
-      .height = FLT_MIN,
+      .height = lineHeight,
   };
 
   for (int i = 0; i < len; i++) {
     OS_Character c = fontMap[str[i]];
     dim.width += (c.advance >> 6);
-    dim.height = dim.height >= c.bearing.y ? dim.height : c.bearing.y;
+    // dim.height = dim.height >= c.bearing.y ? dim.height : c.bearing.y;
   }
 
   return dim;

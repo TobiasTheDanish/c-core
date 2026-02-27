@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "include/RGFW.h"
+#include "path.h"
 #include "string.h"
 
 typedef enum {
@@ -164,9 +165,13 @@ void OS_RendererInit();
 void OS_RenderBegin(OS_Event *events, int32_t count);
 void OS_RenderEnd(OS_Window *w);
 
+String OS_ReadEntireFile(String path);
+String OS_ReadEntireFileFromPath(Path path);
+
 #endif // !CORE_OS_H
 
 #ifdef CORE_OS_IMPLEMENTATION
+#include "os/files.c"
 #include "os/renderer.c"
 #include "os/text.c"
 #include "os/window.c"

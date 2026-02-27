@@ -34,9 +34,20 @@ String StringFromFloat(float f);
 
 Bool StringToFloat(String s, float *res);
 
-/** Returns index of the specified char, starting from index of pos. Returns -1
- * if not found */
+/**
+ * Returns index of the specified char `c`, starting from `pos`.
+ * Returns -1 if not found
+ */
 int32_t StringFindChar(String s, char c, int32_t pos);
+/**
+ * Returns index of the specified `seq`, starting from `pos`.
+ * Returns -1 if not found
+ */
+int32_t StringFindSeq(String s, char *seq, int32_t len, int32_t pos);
+/**
+ * Returns copy of a segment of string `s`, starting at `offset`
+ * and ending at `end`.
+ */
 String StringSubStr(String s, int32_t offset, int32_t end);
 Bool StringEqualsCStr(String s, char *cstr);
 Bool StringIsSpace(String s, int32_t idx);
@@ -61,7 +72,6 @@ extern "C" {
 
 #include "allocator.h"
 #include <stdio.h>
-#include <stdlib.h>
 
 #define __Alloc(b) AllocMemory(b)
 #define __Realloc(p, b) ReallocMemory((p), (b))
@@ -296,6 +306,27 @@ int32_t StringFindChar(String s, char c, int32_t pos) {
 
   for (int32_t i = pos; i < _StringMeta(s)->length; i++) {
     if (s[i] == c) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+int32_t StringFindSeq(String s, char *seq, int32_t len, int32_t pos) {
+  if (pos >= (_StringMeta(s)->length) - len) {
+    return -1;
+  }
+
+  for (int32_t i = pos; i < (_StringMeta(s)->length) - len; i++) {
+    Bool found = false;
+    for (int32_t j = 0; j < len; j++) {
+      found = s[i + j] == seq[j];
+      if (!found) {
+        break;
+      }
+    }
+    if (found) {
       return i;
     }
   }

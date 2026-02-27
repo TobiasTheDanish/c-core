@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define null ((void *)0)
+
 typedef uint8_t Bool;
 #define true ((Bool)1)
 #define false ((Bool)0)

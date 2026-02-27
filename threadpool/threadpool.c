@@ -1,3 +1,6 @@
+#ifndef CORE_THREADPOOL_C
+#define CORE_THREADPOOL_C
+
 #include "../threadpool.h"
 #include <asm-generic/errno.h>
 #include <assert.h>
@@ -141,3 +144,4 @@ void Thread_ShutdownPool() {
     pthread_join(threads[i].thread, NULL);
   }
 }
+#endif /* ifndef CORE_THREADPOOL_C */
