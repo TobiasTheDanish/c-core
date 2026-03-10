@@ -9,3 +9,6 @@ void *__ReallocMemory(void *orig, size_t bytes);
 
 void __FreeMemory(void *mem);
 void __ZeroMemory(void *mem);
+
+void *__ReserveMemory(size_t bytes);
+void __CommitMemory(void *ptr, size_t bytes);

@@ -1,9 +1,34 @@
 #include "../gc.h"
+#include "../baseAllocator.h"
 #include <stdio.h>
 
+void GC_Free(uintptr_t *ptr);
+void __ZeroMemory(void *mem);
+
+void *AllocMemory(int32_t bytes) {
+  if (bytes == 0) {
+    return 0;
+  }
+
+  return CORE_GCAlloc(bytes);
+}
+void *ReallocMemory(void *orig, int32_t bytes) {
+  if (bytes == 0) {
+    return orig;
+  }
+
+  return CORE_GCRealloc(orig, bytes);
+}
+void FreeMemory(void *mem) {
+  printf("[GC]: User tried to free %p via FreeMemory. I will not do it, call "
+         "CORE_GCCollect to free allocated data.\n",
+         mem);
+}
+void ZeroMemory(void *ptr) { __ZeroMemory(ptr); }
+
+#define MEMORY_CAP (128 * 1024 * 1024)
 #define CHUNK_SIZE (sizeof(uintptr_t))
-#define CHUNK_NUM 1024
-#define MEMORY_CAP 640000
+#define CHUNK_NUM (MEMORY_CAP / CHUNK_SIZE)
 
 typedef struct {
   uintptr_t *start;
@@ -93,7 +118,11 @@ int64_t ChunkList_BinarySearch(const ChunkList *list, uintptr_t *ptr) {
     }
 
     diff = max - min;
-    index = min + (diff > 0 ? (diff / 2) : 0);
+    if (diff == 0) {
+      break;
+    }
+
+    index = min + (diff == 1 ? diff : (diff / 2));
     printf("ChunkList_BinarySearch - diff: %ld, new index: %ld\n", diff, index);
   }
 
@@ -157,8 +186,33 @@ void *CORE_GCAlloc(uint64_t bytes) {
   return null;
 }
 
+void *CORE_GCRealloc(void *orig, uint64_t bytes) {
+  if (bytes == 0 && orig != 0) {
+    GC_Free(orig);
+    return 0;
+  }
+
+  void *dest = CORE_GCAlloc(bytes);
+
+  if (orig) {
+    uintptr_t *src = (uintptr_t *)orig;
+    int64_t idx = ChunkList_BinarySearch(&allocatedChunks, src);
+    if (idx == -1 || allocatedChunks.chunks[idx].start != src) {
+      return dest;
+    }
+
+    MemoryChunk srcChunk = allocatedChunks.chunks[idx];
+    uint64_t bytesToMove = srcChunk.size <= bytes ? srcChunk.size : bytes;
+
+    MoveMemory(dest, orig, bytesToMove);
+    GC_Free(orig);
+  }
+
+  return dest;
+}
+
 void GC_Free(uintptr_t *ptr) {
-  if (ptr == null) {
+  if (ptr == null || ptr < memory || (memory + MEMORY_CAP) < ptr) {
     return;
   }
 
@@ -201,7 +255,7 @@ void GC_MarkRegion(uintptr_t **start, uintptr_t **end, Bool *reachableChunks) {
   }
 }
 
-void GC_Collect(uintptr_t **start, uintptr_t **end) {
+void __CORE__GCCollect(uintptr_t **start, uintptr_t **end) {
   printf("GC_Collect - start: %p, end: %p\n", start, end);
 
   Bool reachableChunks[CHUNK_NUM] = {0};
@@ -227,7 +281,7 @@ void GC_Collect(uintptr_t **start, uintptr_t **end) {
 }
 
 void CORE__GCCollect(uintptr_t **start) {
-  GC_Collect(start, __builtin_frame_address(0));
+  __CORE__GCCollect(start, __builtin_frame_address(0));
 }
 
 void ChunkList_Dump(ChunkList *list) {
@@ -243,4 +297,21 @@ void CORE_GCDumpInfo() {
   ChunkList_Dump(&allocatedChunks);
   printf("Freed ");
   ChunkList_Dump(&freeChunks);
+}
+
+void __ZeroMemory(void *mem) {
+  if (mem == 0) {
+    return;
+  }
+
+  int64_t idx = ChunkList_BinarySearch(&allocatedChunks, (uintptr_t *)mem);
+  if (idx == -1 || allocatedChunks.chunks[idx].start != mem) {
+    return;
+  }
+
+  MemoryChunk meta = allocatedChunks.chunks[idx];
+  uint8_t *bytes = (uint8_t *)mem;
+  for (int i = 0; i < meta.size; i++) {
+    bytes[i] = 0;
+  }
 }

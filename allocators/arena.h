@@ -17,13 +17,7 @@ typedef struct {
 void *ArenaAlloc(Arena *a, int32_t bytes);
 void *ArenaRealloc(Arena *a, void *orig, int32_t bytes);
 void ArenaFree(Arena *a);
+
+void ArenaPushCurrent(Arena *a);
+void ArenaPopCurrent();
 #endif // !ARENA_H
-
-#ifdef CORE_ARENA_IMPLEMENTATION
-#ifndef IMPLEMENTATION_GUARD
-#define IMPLEMENTATION_GUARD
-
-#include "arena/arena.c"
-
-#endif // !IMPLEMENTATION_GUARD
-#endif // CORE_ARENA_IMPLEMENTATION

@@ -93,4 +93,24 @@ void __ZeroMemory(void *mem) {
   }
 }
 
+void *__ReserveMemory(size_t bytes) {
+  if (bytes == 0) {
+    return 0;
+  }
+
+  bytes = (bytes + (sizeof(void *) - 1) & ~(sizeof(void *) - 1));
+
+  void *ptr = mmap(0, bytes, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+  if (ptr == MAP_FAILED) {
+    printf("Error reserving memory. Errno: %d\n", errno);
+    return 0;
+  }
+
+  return ptr;
+}
+
+void __CommitMemory(void *ptr, size_t bytes) {
+  mprotect(ptr, bytes, PROT_READ | PROT_WRITE);
+}
+
 #endif /* ifndef UNIX_ALLOCATOR_C */

@@ -16,8 +16,6 @@
 #define RGFW_OPENGL
 #include "../thirdparty/RGFW.h"
 
-Arena staticArena = {0};
-
 void __AllocBitmap(Bitmap *b, int32_t width, int32_t height) {
   b->bpp = 4;
   int dataInBytes = width * height * b->bpp;
