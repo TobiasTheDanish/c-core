@@ -140,6 +140,7 @@ void OS_DrawBitmapRotated(OS_Window *w, Bitmap src, V2 pos, double angle);
 void OS_DrawText(OS_Window *w, String s, V2 pos, Color c);
 
 void OS_PollEvents(OS_Window *w, OS_Event **_events, int32_t *count);
+void OS_HandleEvents(OS_Window *w, OS_Event *_events, int32_t count);
 
 Bool OS_LoadFont(char *fontPath, int32_t fontSize);
 int32_t OS_TextWidth(char *str, int32_t len);

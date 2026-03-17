@@ -1,6 +1,15 @@
-#include "../allocator.h"
+#include "../allocators/arena.h"
 #include "../gui.h"
 #include "../os.h"
+
+Arena CORE_Ui_staticArena = {0};
+#define staticArena (CORE_Ui_staticArena)
+Arena CORE_Ui_guiArena = {0};
+#define guiArena (CORE_Ui_guiArena)
+Arena CORE_Ui_cacheArena = {0};
+#define cacheArena (CORE_Ui_cacheArena)
+Arena CORE_Ui_stacksArena = {0};
+#define stacksArena (CORE_Ui_stacksArena)
 
 #define ForEachChild(name, w)                                                  \
   for (UiWidget *name = (w)->right; name != 0; name = name->nextSibling)
@@ -36,7 +45,7 @@ UiWidget *UiWidgetFromKey(UiContext *ctx, UiKey key) {
   for (UiWidget *w = ctx->widgetTable[slot].hash_first; w != 0;
        w = w->hash_next) {
     if (UiKeyMatch(key, w->key)) {
-      res = w;
+      res = ArenaCopyTo(&guiArena, w, sizeof(UiWidget));
       break;
     }
   }
@@ -71,7 +80,7 @@ String UiHashPartOfKeyString(String s) {
 String UiDisplayPartOfKeyString(String s) {
   String res = s;
   int32_t delimeterIdx = StringFindSeq(s, "###", 3, 0);
-  if (delimeterIdx != 1) {
+  if (delimeterIdx != -1) {
     res = StringSubStr(s, 0, delimeterIdx);
   }
 
@@ -86,7 +95,7 @@ UiWidget *UiWidgetFromString(UiContext *ctx, String s, UiWidgetFlags flags) {
   Bool firstFrame = w == 0;
 
   if (firstFrame) {
-    w = AllocMemory(sizeof(UiWidget));
+    w = ArenaAlloc(&guiArena, sizeof(UiWidget));
   }
 
   w->key = key;
@@ -129,7 +138,12 @@ UiSignal UiSignalFromWidget(UiContext *ctx, UiWidget *w) {
     }
   }
 
-  w->data.isActive = ctx->active == w;
+  if (ctx->active) {
+    w->data.isActive = UiKeyMatch(ctx->active->key, w->key);
+    if (w->data.isActive) {
+      s.f |= UiSignalFlags_Active;
+    }
+  }
 
   return s;
 }
@@ -150,7 +164,7 @@ void UpdateWidgetCache(UiContext *ctx, UiWidget *w);
 
 #define InitStack(s, d)                                                        \
   do {                                                                         \
-    (s) = AllocMemory(sizeof(typeof(*(s))));                                   \
+    (s) = ArenaAlloc(&staticArena, sizeof(typeof(*(s))));                      \
     (s)->data = (d);                                                           \
   } while (false)
 
@@ -165,11 +179,11 @@ void GUI_InitStacks(UiContext *ctx) {
 }
 
 UiContext *GUICreateContext() {
-  UiContext *ctx = AllocMemory(sizeof(UiContext));
+  UiContext *ctx = ArenaAlloc(&staticArena, sizeof(UiContext));
 
   ctx->widgetTableSize = 4096;
   ctx->widgetTable =
-      AllocMemory(ctx->widgetTableSize * sizeof(UiWidgetHashSlot));
+      ArenaAlloc(&staticArena, ctx->widgetTableSize * sizeof(UiWidgetHashSlot));
 
   GUI_InitStacks(ctx);
 
@@ -230,14 +244,14 @@ void GUIBegin(UiContext *ctx) {
     ctx->hot = 0;
   }
 
-  String s = StringFromCString("root");
+  String s = StringFromCString("###root");
   UiKey key = UiKeyFromString(UiZeroKey(), s);
   StringFree(s);
   UiWidget *root = UiWidgetFromKey(ctx, key);
   Bool firstFrame = root == 0;
 
   if (firstFrame) {
-    root = AllocMemory(sizeof(UiWidget));
+    root = ArenaAlloc(&guiArena, sizeof(UiWidget));
   }
 
   root->key = key;
@@ -267,6 +281,7 @@ void GUIEnd(UiContext *ctx, OS_Window *w) {
   RenderWidgetTree(ctx->root, w);
   ResetWidgetCache(ctx);
   UpdateWidgetCache(ctx, ctx->root);
+  ArenaFree(&guiArena);
 }
 
 void PushChildWidget(UiContext *ctx, UiWidget *w) {
@@ -410,6 +425,9 @@ void CalcRelPositions(UiWidget *w) {
     UiAxis axis = w->parent->data.layoutAxis;
     w->relativePosition[axis] = w->prevSibling->relativePosition[axis] +
                                 w->prevSibling->dimensions[axis];
+  } else if (w->prevSibling == 0 && w->parent != 0) {
+    UiAxis axis = w->parent->data.layoutAxis;
+    w->relativePosition[axis] = 0;
   }
 
   w->screenRect = (Rect){
@@ -452,24 +470,35 @@ void ResetWidgetCache(UiContext *ctx) {
     slot->hash_first = 0;
     slot->hash_last = 0;
   }
+  ArenaFree(&cacheArena);
 }
 
 void UpdateWidgetCache(UiContext *ctx, UiWidget *w) {
-  uint64_t slotIdx = w->key.u64[0] % ctx->widgetTableSize;
+  Bool isHot = ctx->hot == w;
+  Bool isActive = ctx->active == w;
+
+  UiWidget *cacheWidget = ArenaCopyTo(&cacheArena, w, sizeof(UiWidget));
+  if (isHot) {
+    ctx->hot = cacheWidget;
+  }
+  if (isActive) {
+    ctx->active = cacheWidget;
+  }
+  uint64_t slotIdx = cacheWidget->key.u64[0] % ctx->widgetTableSize;
   UiWidgetHashSlot *slot = &ctx->widgetTable[slotIdx];
 
   if (slot->hash_first == 0) {
-    slot->hash_first = w;
+    slot->hash_first = cacheWidget;
   }
 
-  w->hash_prev = slot->hash_last;
+  cacheWidget->hash_prev = slot->hash_last;
   if (slot->hash_last != 0) {
-    slot->hash_last->hash_next = w;
+    slot->hash_last->hash_next = cacheWidget;
   }
 
-  slot->hash_last = w;
+  slot->hash_last = cacheWidget;
 
-  ForEachChild(child, w) { UpdateWidgetCache(ctx, child); }
+  ForEachChild(child, cacheWidget) { UpdateWidgetCache(ctx, child); }
 }
 
 #define StackPush(s, e)                                                        \
@@ -481,37 +510,37 @@ void UpdateWidgetCache(UiContext *ctx, UiWidget *w) {
   do {                                                                         \
     typeof(*(s)) *tmp = (s);                                                   \
     (s) = (s)->prev;                                                           \
-    FreeMemory(tmp);                                                           \
   } while (false)
+// FreeMemory(tmp);                                                           \
 
 void PushBgColor(UiContext *ctx, Color c) {
-  ColorStack *e = AllocMemory(sizeof(ColorStack));
+  ColorStack *e = ArenaAlloc(&stacksArena, sizeof(ColorStack));
   e->data = c;
   StackPush(ctx->bgColorStack, e);
 }
 void PopBgColor(UiContext *ctx) { StackPop(ctx->bgColorStack); }
 void PushContentColor(UiContext *ctx, Color c) {
-  ColorStack *e = AllocMemory(sizeof(ColorStack));
+  ColorStack *e = ArenaAlloc(&stacksArena, sizeof(ColorStack));
   e->data = c;
   StackPush(ctx->contentColorStack, e);
 }
 void PopContentColor(UiContext *ctx) { StackPop(ctx->contentColorStack); }
 
 void PushWidth(UiContext *ctx, UiSize s) {
-  UiSizeStack *e = AllocMemory(sizeof(UiSizeStack));
+  UiSizeStack *e = ArenaAlloc(&stacksArena, sizeof(UiSizeStack));
   e->data = s;
   StackPush(ctx->widthStack, e);
 }
 void PopWidth(UiContext *ctx) { StackPop(ctx->widthStack); }
 void PushHeight(UiContext *ctx, UiSize s) {
-  UiSizeStack *e = AllocMemory(sizeof(UiSizeStack));
+  UiSizeStack *e = ArenaAlloc(&stacksArena, sizeof(UiSizeStack));
   e->data = s;
   StackPush(ctx->heightStack, e);
 }
 void PopHeight(UiContext *ctx) { StackPop(ctx->heightStack); }
 
 void PushLayoutAxis(UiContext *ctx, UiAxis a) {
-  UiAxisStack *e = AllocMemory(sizeof(UiAxisStack));
+  UiAxisStack *e = ArenaAlloc(&stacksArena, sizeof(UiAxisStack));
   e->data = a;
   StackPush(ctx->layoutStack, e);
 }

@@ -58,6 +58,32 @@ void __AppendEvent(OS_Event **events, int *count, OS_Event e) {
   }
 }
 
+void OS_HandleEvents(OS_Window *w, OS_Event *_events, int32_t count) {
+  if (count == 0 || _events == 0) {
+    return;
+  }
+
+  for (int32_t i = 0; i < count; i++) {
+    OS_Event e = _events[i];
+    switch (e.kind) {
+    case OS_EventKind_WindowResize: {
+      int32_t width = e.resize.width;
+      int32_t height = e.resize.height;
+      glViewport(0, 0, width, height);
+
+      // FreeMemory(w->frameBitmap.data);
+      // __AllocBitmap(&w->frameBitmap, width, height);
+      //
+    } break;
+    case OS_EventKind_KeyDown:
+    case OS_EventKind_KeyUp:
+    case OS_EventKind_MouseMove:
+    case OS_EventKind_Quit:
+      break;
+    }
+  }
+}
+
 void OS_PollEvents(OS_Window *w, OS_Event **_events, int32_t *count) {
   for (RGFW_event *event = RGFW_window_checkEvent(w->w); event != 0;
        event = RGFW_window_checkEvent(w->w)) {
@@ -66,11 +92,6 @@ void OS_PollEvents(OS_Window *w, OS_Event **_events, int32_t *count) {
     case RGFW_windowResized: {
       int32_t width = w->w->r.w;
       int32_t height = w->w->r.h;
-      glViewport(0, 0, width, height);
-
-      FreeMemory(w->frameBitmap.data);
-      __AllocBitmap(&w->frameBitmap, width, height);
-
       e = (OS_Event){
           .kind = OS_EventKind_WindowResize,
           .resize =

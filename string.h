@@ -56,6 +56,8 @@ Bool StringIsNumeric(String s, int32_t idx);
 /** Returns true if the char of s at idx is equal to any of the chars in chars
  */
 Bool StringIsAny(String s, int32_t idx, String chars);
+Bool StringIsEmpty(String s);
+Bool StringIsBlank(String s);
 
 #ifdef __cplusplus
 }
@@ -396,6 +398,24 @@ Bool StringIsAny(String s, int32_t idx, String chars) {
     }
   }
   return false;
+}
+
+Bool StringIsEmpty(String s) { return !s || StringLength(s) == 0; }
+
+Bool StringIsBlank(String s) {
+  if (StringIsEmpty(s)) {
+    return true;
+  }
+
+  String blankChars = StringFromCString(" \t\n\r");
+  int32_t len = StringLength(s);
+  for (int32_t i = 0; i < len; i++) {
+    if (!StringIsAny(s, i, blankChars)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 #ifdef __cplusplus

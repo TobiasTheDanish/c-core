@@ -113,6 +113,7 @@ typedef uint32_t UiSignalFlags;
 enum {
   UiSignalFlags_Hovering = (1 << 0),
   UiSignalFlags_Clicked = (1 << 1),
+  UiSignalFlags_Active = (1 << 2),
 };
 
 typedef struct {
@@ -176,6 +177,7 @@ UiSignal GUI_TextEdit(UiContext *ctx, String *text);
 
 #define GUI_Hovering(s) !!((s).f & UiSignalFlags_Hovering)
 #define GUI_Clicked(s) !!((s).f & UiSignalFlags_Clicked)
+#define GUI_IsActive(s) !!((s).f & UiSignalFlags_Active)
 
 #define GUI_UiSize(k, v, s)                                                    \
   (UiSize) { .kind = (k), .value = (v), .strictness = (s), }
