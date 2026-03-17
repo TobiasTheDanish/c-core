@@ -1,3 +1,4 @@
+#include "../../common.h"
 #include <stddef.h>
 #include <stdint.h>
 int32_t __GetPageSize();
@@ -11,4 +12,5 @@ void __FreeMemory(void *mem);
 void __ZeroMemory(void *mem);
 
 void *__ReserveMemory(size_t bytes);
-void __CommitMemory(void *ptr, size_t bytes);
+Bool __CommitMemory(void *ptr, size_t bytes);
+Bool __ReleaseMemory(void *ptr, size_t bytes);

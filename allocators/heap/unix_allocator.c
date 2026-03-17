@@ -109,8 +109,22 @@ void *__ReserveMemory(size_t bytes) {
   return ptr;
 }
 
-void __CommitMemory(void *ptr, size_t bytes) {
-  mprotect(ptr, bytes, PROT_READ | PROT_WRITE);
+Bool __CommitMemory(void *ptr, size_t bytes) {
+  if (mprotect(ptr, bytes, PROT_READ | PROT_WRITE) != 0) {
+    printf("Error committing memory. Errno: %d\n", errno);
+    return false;
+  }
+
+  return true;
+}
+
+Bool __ReleaseMemory(void *ptr, size_t bytes) {
+  if (mprotect(ptr, bytes, PROT_NONE) != 0) {
+    printf("Error releasing memory. Errno: %d\n", errno);
+    return false;
+  }
+
+  return true;
 }
 
 #endif /* ifndef UNIX_ALLOCATOR_C */
